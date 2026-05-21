@@ -644,10 +644,10 @@ body {
     /* Overlay mobile controls on top of the canvas */
     .mobile-controls {
         position: absolute;
-        bottom: calc(28px + env(safe-area-inset-bottom));
-        left: calc(36px + env(safe-area-inset-left));
-        right: calc(36px + env(safe-area-inset-right));
-        width: calc(100% - 72px - env(safe-area-inset-left) - env(safe-area-inset-right));
+        bottom: calc(48px + env(safe-area-inset-bottom));
+        left: calc(48px + env(safe-area-inset-left));
+        right: calc(48px + env(safe-area-inset-right));
+        width: calc(100% - 96px - env(safe-area-inset-left) - env(safe-area-inset-right));
         background: transparent !important;
         border: none !important;
         z-index: 20;
@@ -743,10 +743,10 @@ body {
     /* Extra safety scaling for ultra low-height mobile viewports (e.g. landscape smartphones with browsers headers) */
     @media (max-height: 390px) {
         .mobile-controls {
-            bottom: calc(14px + env(safe-area-inset-bottom));
-            left: calc(30px + env(safe-area-inset-left));
-            right: calc(30px + env(safe-area-inset-right));
-            width: calc(100% - 60px - env(safe-area-inset-left) - env(safe-area-inset-right));
+            bottom: calc(36px + env(safe-area-inset-bottom));
+            left: calc(40px + env(safe-area-inset-left));
+            right: calc(40px + env(safe-area-inset-right));
+            width: calc(100% - 80px - env(safe-area-inset-left) - env(safe-area-inset-right));
         }
         .dpad {
             grid-template-columns: 44px 44px 44px;
