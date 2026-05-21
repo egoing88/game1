@@ -146,23 +146,28 @@
                     <button id="btn-home" class="btn btn-primary">처음으로</button>
                 </div>
             </div>
-        </div>
 
-        <!-- Mobile Touch Controller -->
-        <div id="mobile-controller" class="mobile-controls hidden-desktop">
-            <div class="dpad">
-                <button id="ctrl-left" class="ctrl-btn-game pad-left">◀</button>
-                <div class="dpad-vertical">
-                    <button id="ctrl-up" class="ctrl-btn-game pad-up">▲</button>
-                    <button id="ctrl-down" class="ctrl-btn-game pad-down">▼</button>
+            <!-- Mobile Touch Controller -->
+            <div id="mobile-controller" class="mobile-controls hidden-desktop">
+                <div class="dpad">
+                    <button id="ctrl-left" class="ctrl-btn-game pad-left">◀</button>
+                    <div class="dpad-vertical">
+                        <button id="ctrl-up" class="ctrl-btn-game pad-up">▲</button>
+                        <button id="ctrl-down" class="ctrl-btn-game pad-down">▼</button>
+                    </div>
+                    <button id="ctrl-right" class="ctrl-btn-game pad-right">▶</button>
                 </div>
-                <button id="ctrl-right" class="ctrl-btn-game pad-right">▶</button>
+                
+                <div class="action-buttons">
+                    <button id="ctrl-attack" class="ctrl-btn-game action-attack">HIT</button>
+                    <button id="ctrl-jump" class="ctrl-btn-game action-jump">JUMP</button>
+                </div>
             </div>
-            
-            <div class="action-buttons">
-                <button id="ctrl-attack" class="ctrl-btn-game action-attack">HIT</button>
-                <button id="ctrl-jump" class="ctrl-btn-game action-jump">JUMP</button>
-            </div>
+
+            <!-- Mobile Floating Fullscreen Button -->
+            <button id="mobile-fullscreen" class="mobile-fullscreen-btn hidden-desktop" title="전체화면 토글">
+                <svg viewBox="0 0 24 24" id="svg-mobile-fullscreen"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
+            </button>
         </div>
 
         <!-- Footer -->
