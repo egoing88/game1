@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Outfit:wght@300;400;700;900&family=Press+Start+2P&display=swap" rel="stylesheet">
     
-    <link rel="stylesheet" href="style.css?v=1.1">
+    <link rel="stylesheet" href="style.css?v=1.2">
 </head>
 <body>
     <!-- Portrait Mode Warning Overlay -->
@@ -73,6 +73,11 @@
                     <span class="hud-label">STAGE</span>
                     <span id="hud-stage" class="hud-value">1</span>
                 </div>
+
+                <div class="hud-item time-container" id="hud-time-container" style="display:none;">
+                    <span class="hud-label">TIME</span>
+                    <span id="hud-time" class="hud-value hud-time-value">00:00.00</span>
+                </div>
             </div>
 
             <!-- Start Menu Screen -->
@@ -86,7 +91,11 @@
                         <div class="caveman-avatar"></div>
                     </div>
 
-                    <button id="btn-start" class="btn btn-primary btn-lg">게임 시작</button>
+                    <div class="start-buttons-group">
+                        <button id="btn-start" class="btn btn-primary btn-lg">🎮 일반 모드</button>
+                        <button id="btn-start-rank" class="btn btn-rank btn-lg">🏆 랭크 모드</button>
+                        <button id="btn-view-leaderboard" class="btn btn-leaderboard">📊 랭킹 보기</button>
+                    </div>
                     
                     <div class="control-guide">
                         <h3>조작 방법</h3>
@@ -147,6 +156,77 @@
                 </div>
             </div>
 
+            <!-- Rank Register Screen -->
+            <div id="screen-rank-register" class="screen-overlay hidden">
+                <div class="screen-content bg-victory-glass rank-register-content">
+                    <h2 class="text-victory glow-gold">🏆 RANK COMPLETE!</h2>
+                    <p class="screen-desc">모든 스테이지를 클리어했습니다!</p>
+                    
+                    <div class="rank-summary">
+                        <div class="rank-stat"><span class="rank-stat-label">⏱ 클리어 시간</span><span id="rank-time" class="rank-stat-value">00:00.00</span></div>
+                        <div class="rank-stat"><span class="rank-stat-label">💰 최종 점수</span><span id="rank-score" class="rank-stat-value">0</span></div>
+                        <div class="rank-stat" id="rank-perfect-row" style="display:none;"><span class="rank-stat-label">🏆 배지</span><span class="rank-stat-value perfect-badge">PERFECT CLEAR</span></div>
+                    </div>
+
+                    <div class="rank-form">
+                        <div class="rank-input-group">
+                            <label for="rank-name">닉네임</label>
+                            <input type="text" id="rank-name" maxlength="10" placeholder="이름을 입력하세요" autocomplete="off" />
+                        </div>
+                        <div class="rank-input-group">
+                            <label for="rank-country">국가</label>
+                            <select id="rank-country">
+                                <option value="KR">🇰🇷 대한민국</option>
+                                <option value="US">🇺🇸 미국</option>
+                                <option value="JP">🇯🇵 일본</option>
+                                <option value="CN">🇨🇳 중국</option>
+                                <option value="GB">🇬🇧 영국</option>
+                                <option value="CA">🇨🇦 캐나다</option>
+                                <option value="AU">🇦🇺 호주</option>
+                                <option value="VN">🇻🇳 베트남</option>
+                                <option value="PH">🇵🇭 필리핀</option>
+                                <option value="TH">🇹🇭 태국</option>
+                                <option value="DE">🇩🇪 독일</option>
+                                <option value="FR">🇫🇷 프랑스</option>
+                                <option value="BR">🇧🇷 브라질</option>
+                                <option value="IN">🇮🇳 인도</option>
+                                <option value="RU">🇷🇺 러시아</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <button id="btn-submit-rank" class="btn btn-primary btn-lg">🏅 랭킹 등록</button>
+                </div>
+            </div>
+
+            <!-- Leaderboard Screen -->
+            <div id="screen-leaderboard" class="screen-overlay hidden">
+                <div class="screen-content bg-victory-glass leaderboard-content">
+                    <h2 class="text-victory glow-gold">📊 LEADERBOARD</h2>
+                    <p class="screen-desc">전 세계 원시인 용사들의 기록</p>
+                    
+                    <div class="leaderboard-table-wrapper">
+                        <table class="leaderboard-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>이름</th>
+                                    <th>국가</th>
+                                    <th>시간</th>
+                                    <th>점수</th>
+                                    <th>배지</th>
+                                </tr>
+                            </thead>
+                            <tbody id="leaderboard-body">
+                                <!-- Dynamically rendered -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <button id="btn-leaderboard-home" class="btn btn-primary">처음으로</button>
+                </div>
+            </div>
+
             <!-- Mobile Touch Controller -->
             <div id="mobile-controller" class="mobile-controls hidden-desktop">
                 <div class="dpad">
@@ -176,9 +256,13 @@
         </footer>
     </div>
 
+    <!-- Firebase SDK (Compat for simplicity) -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+
     <!-- Scripts -->
-    <script src="audio.js?v=1.1"></script>
-    <script src="sprites.js?v=1.1"></script>
-    <script src="game.js?v=1.1"></script>
+    <script src="audio.js?v=1.2"></script>
+    <script src="sprites.js?v=1.2"></script>
+    <script src="game.js?v=1.2"></script>
 </body>
 </html>

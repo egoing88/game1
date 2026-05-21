@@ -1,5 +1,51 @@
 // Caveman Adventure - Core Game Engine
 
+// ==============================
+// Firebase Configuration
+// ==============================
+// Replace these values with your own Firebase project config
+// to enable online leaderboard. If left as placeholders,
+// the game will automatically fall back to localStorage.
+const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_PROJECT.firebaseapp.com",
+    databaseURL: "https://YOUR_PROJECT-default-rtdb.firebaseio.com",
+    projectId: "YOUR_PROJECT",
+    storageBucket: "YOUR_PROJECT.appspot.com",
+    messagingSenderId: "000000000000",
+    appId: "YOUR_APP_ID"
+};
+
+let firebaseDB = null;
+try {
+    if (typeof firebase !== 'undefined' && firebaseConfig.apiKey !== 'YOUR_API_KEY') {
+        firebase.initializeApp(firebaseConfig);
+        firebaseDB = firebase.database();
+        console.log('[CavemanAdventure] Firebase online leaderboard connected!');
+    } else {
+        console.log('[CavemanAdventure] Firebase not configured. Using localStorage fallback.');
+    }
+} catch (e) {
+    console.warn('[CavemanAdventure] Firebase init failed, using localStorage fallback.', e);
+    firebaseDB = null;
+}
+
+// Country flag emoji map
+const COUNTRY_FLAGS = {
+    'KR': '\ud83c\uddf0\ud83c\uddf7', 'US': '\ud83c\uddfa\ud83c\uddf8', 'JP': '\ud83c\uddef\ud83c\uddf5',
+    'CN': '\ud83c\udde8\ud83c\uddf3', 'GB': '\ud83c\uddec\ud83c\udde7', 'CA': '\ud83c\udde8\ud83c\udde6',
+    'AU': '\ud83c\udde6\ud83c\uddfa', 'VN': '\ud83c\uddfb\ud83c\uddf3', 'PH': '\ud83c\uddf5\ud83c\udded',
+    'TH': '\ud83c\uddf9\ud83c\udded', 'DE': '\ud83c\udde9\ud83c\uddea', 'FR': '\ud83c\uddeb\ud83c\uddf7',
+    'BR': '\ud83c\udde7\ud83c\uddf7', 'IN': '\ud83c\uddee\ud83c\uddf3', 'RU': '\ud83c\uddf7\ud83c\uddfa'
+};
+
+// Default dummy leaderboard data
+const DEFAULT_LEADERBOARD = [
+    { name: 'Ugg', country: 'US', time: 765200, score: 18500, perfect: false },
+    { name: 'Grog', country: 'KR', time: 930150, score: 15200, perfect: false },
+    { name: 'Caveboy', country: 'JP', time: 1102500, score: 12800, perfect: false }
+];
+
 class Game {
     constructor() {
         this.canvas = document.getElementById('gameCanvas');
@@ -20,7 +66,9 @@ class Game {
             GAMEOVER: 'GAMEOVER',
             CLEAR: 'CLEAR',
             VICTORY: 'VICTORY',
-            ENDING: 'ENDING'
+            ENDING: 'ENDING',
+            RANK_REGISTER: 'RANK_REGISTER',
+            LEADERBOARD: 'LEADERBOARD'
         };
         this.currentState = this.states.START;
         
@@ -29,6 +77,13 @@ class Game {
         this.prevAttackPressed = false;
         this.score = 0;
         this.highScore = parseInt(localStorage.getItem('caveman_highscore')) || 0;
+
+        // Rank Mode state
+        this.isRankMode = false;
+        this.rankStartTime = 0;
+        this.rankElapsedTime = 0;
+        this.isPerfectRun = true;
+        this.rankPausedTime = 0; // accumulated time from paused segments
         
         // Active key states
         this.keys = {};
@@ -63,6 +118,8 @@ class Game {
         this.screenGameOver = document.getElementById('screen-gameover');
         this.screenClear = document.getElementById('screen-clear');
         this.screenVictory = document.getElementById('screen-victory');
+        this.screenRankRegister = document.getElementById('screen-rank-register');
+        this.screenLeaderboard = document.getElementById('screen-leaderboard');
         this.hud = document.getElementById('game-hud');
         
         this.hudHearts = document.getElementById('hud-hearts');
@@ -70,6 +127,8 @@ class Game {
         this.hudFoodText = document.getElementById('hud-food-text');
         this.hudScore = document.getElementById('hud-score');
         this.hudStage = document.getElementById('hud-stage');
+        this.hudTimeContainer = document.getElementById('hud-time-container');
+        this.hudTime = document.getElementById('hud-time');
         
         this.overScore = document.getElementById('over-score');
         this.overHighScore = document.getElementById('over-high-score');
@@ -77,6 +136,14 @@ class Game {
         this.clearBonus = document.getElementById('clear-bonus');
         this.victoryScore = document.getElementById('victory-score');
         this.victoryHighScore = document.getElementById('victory-high-score');
+        
+        // Rank register elements
+        this.rankTimeEl = document.getElementById('rank-time');
+        this.rankScoreEl = document.getElementById('rank-score');
+        this.rankPerfectRow = document.getElementById('rank-perfect-row');
+        this.rankNameInput = document.getElementById('rank-name');
+        this.rankCountrySelect = document.getElementById('rank-country');
+        this.leaderboardBody = document.getElementById('leaderboard-body');
     }
 
     bindEvents() {
@@ -118,6 +185,7 @@ class Game {
             if (window.innerWidth <= 900) {
                 this.requestFullscreenForGame();
             }
+            this.isRankMode = false;
             this.startGame();
         });
         document.getElementById('btn-restart').addEventListener('click', () => {
@@ -133,6 +201,42 @@ class Game {
             this.nextStage();
         });
         document.getElementById('btn-home').addEventListener('click', () => this.goToHome());
+
+        // Rank Mode Button Bindings
+        const btnStartRank = document.getElementById('btn-start-rank');
+        if (btnStartRank) {
+            btnStartRank.addEventListener('click', () => {
+                if (window.innerWidth <= 900) {
+                    this.requestFullscreenForGame();
+                }
+                this.isRankMode = true;
+                this.isPerfectRun = true;
+                this.rankPausedTime = 0;
+                this.rankStartTime = Date.now();
+                this.startGame();
+            });
+        }
+
+        const btnViewLeaderboard = document.getElementById('btn-view-leaderboard');
+        if (btnViewLeaderboard) {
+            btnViewLeaderboard.addEventListener('click', () => {
+                this.showLeaderboard();
+            });
+        }
+
+        const btnSubmitRank = document.getElementById('btn-submit-rank');
+        if (btnSubmitRank) {
+            btnSubmitRank.addEventListener('click', () => {
+                this.submitRankEntry();
+            });
+        }
+
+        const btnLeaderboardHome = document.getElementById('btn-leaderboard-home');
+        if (btnLeaderboardHome) {
+            btnLeaderboardHome.addEventListener('click', () => {
+                this.goToHome();
+            });
+        }
 
         // Fullscreen Toggle (Desktop and Mobile)
         const btnFullscreen = document.getElementById('btn-fullscreen');
@@ -1298,11 +1402,17 @@ class Game {
         }
 
         // Hide overlays, show HUD
-        this.screenStart.classList.add('hidden');
-        this.screenGameOver.classList.add('hidden');
-        this.screenClear.classList.add('hidden');
-        this.screenVictory.classList.add('hidden');
+        this.hideAllScreens();
         this.hud.classList.remove('hidden');
+
+        // Rank mode HUD setup
+        if (this.isRankMode) {
+            this.hud.classList.add('hud-rank-mode');
+            if (this.hudTimeContainer) this.hudTimeContainer.style.display = '';
+        } else {
+            this.hud.classList.remove('hud-rank-mode');
+            if (this.hudTimeContainer) this.hudTimeContainer.style.display = 'none';
+        }
 
         // Play stage background music
         window.gameAudio.playBGM(this.stage);
@@ -1322,10 +1432,22 @@ class Game {
     goToHome() {
         this.currentState = this.states.START;
         this.player = null; // Clear player to show title background gradient
-        this.screenVictory.classList.add('hidden');
+        this.isRankMode = false;
+        this.hideAllScreens();
         this.screenStart.classList.remove('hidden');
         this.hud.classList.add('hidden');
+        this.hud.classList.remove('hud-rank-mode');
+        if (this.hudTimeContainer) this.hudTimeContainer.style.display = 'none';
         window.gameAudio.stopBGM();
+    }
+
+    hideAllScreens() {
+        this.screenStart.classList.add('hidden');
+        this.screenGameOver.classList.add('hidden');
+        this.screenClear.classList.add('hidden');
+        this.screenVictory.classList.add('hidden');
+        if (this.screenRankRegister) this.screenRankRegister.classList.add('hidden');
+        if (this.screenLeaderboard) this.screenLeaderboard.classList.add('hidden');
     }
 
     triggerGameOver() {
@@ -1360,6 +1482,12 @@ class Game {
     }
 
     triggerVictory() {
+        // If rank mode, redirect to rank registration instead
+        if (this.isRankMode) {
+            this.triggerRankRegister();
+            return;
+        }
+
         this.currentState = this.states.VICTORY;
         this.hud.classList.add('hidden');
         this.screenVictory.classList.remove('hidden');
@@ -1375,6 +1503,179 @@ class Game {
         
         window.gameAudio.playVictory();
     }
+
+    // ==============================
+    // RANK MODE METHODS
+    // ==============================
+
+    triggerRankRegister() {
+        this.currentState = this.states.RANK_REGISTER;
+        this.rankElapsedTime = Date.now() - this.rankStartTime;
+        this.hud.classList.add('hidden');
+        this.hideAllScreens();
+        this.screenRankRegister.classList.remove('hidden');
+
+        // Populate rank summary
+        if (this.rankTimeEl) this.rankTimeEl.innerText = this.formatTime(this.rankElapsedTime);
+        if (this.rankScoreEl) this.rankScoreEl.innerText = this.score.toLocaleString();
+        if (this.rankPerfectRow) {
+            this.rankPerfectRow.style.display = this.isPerfectRun ? '' : 'none';
+        }
+        if (this.rankNameInput) this.rankNameInput.value = '';
+
+        // Save high score
+        if (this.score > this.highScore) {
+            this.highScore = this.score;
+            localStorage.setItem('caveman_highscore', this.highScore);
+        }
+
+        window.gameAudio.playVictory();
+    }
+
+    submitRankEntry() {
+        const name = (this.rankNameInput ? this.rankNameInput.value.trim() : '').substring(0, 10) || 'Caveman';
+        const country = this.rankCountrySelect ? this.rankCountrySelect.value : 'KR';
+
+        const entry = {
+            name: name,
+            country: country,
+            time: this.rankElapsedTime,
+            score: this.score,
+            perfect: this.isPerfectRun,
+            timestamp: Date.now()
+        };
+
+        if (firebaseDB) {
+            // Save to Firebase
+            firebaseDB.ref('leaderboard').push(entry)
+                .then(() => {
+                    console.log('[CavemanAdventure] Rank entry saved to Firebase.');
+                    this.showLeaderboard();
+                })
+                .catch(err => {
+                    console.warn('[CavemanAdventure] Firebase save failed, saving locally.', err);
+                    this.saveToLocalStorage(entry);
+                    this.showLeaderboard();
+                });
+        } else {
+            // Save to localStorage
+            this.saveToLocalStorage(entry);
+            this.showLeaderboard();
+        }
+    }
+
+    saveToLocalStorage(entry) {
+        let data = [];
+        try {
+            data = JSON.parse(localStorage.getItem('caveman_leaderboard')) || [];
+        } catch (e) { data = []; }
+        data.push(entry);
+        localStorage.setItem('caveman_leaderboard', JSON.stringify(data));
+    }
+
+    showLeaderboard() {
+        this.currentState = this.states.LEADERBOARD;
+        this.hud.classList.add('hidden');
+        this.hideAllScreens();
+        this.screenLeaderboard.classList.remove('hidden');
+
+        this.loadLeaderboardData((entries) => {
+            this.renderLeaderboard(entries);
+        });
+    }
+
+    loadLeaderboardData(callback) {
+        if (firebaseDB) {
+            firebaseDB.ref('leaderboard').orderByChild('time').limitToFirst(50).once('value')
+                .then(snapshot => {
+                    let entries = [];
+                    snapshot.forEach(child => {
+                        entries.push(child.val());
+                    });
+                    // If empty from firebase, merge with defaults
+                    if (entries.length === 0) {
+                        entries = [...DEFAULT_LEADERBOARD];
+                    }
+                    // Sort: time ascending, then score descending
+                    entries.sort((a, b) => a.time - b.time || b.score - a.score);
+                    callback(entries);
+                })
+                .catch(err => {
+                    console.warn('[CavemanAdventure] Firebase read failed, using local data.', err);
+                    this.loadLocalLeaderboard(callback);
+                });
+        } else {
+            this.loadLocalLeaderboard(callback);
+        }
+    }
+
+    loadLocalLeaderboard(callback) {
+        let data = [];
+        try {
+            data = JSON.parse(localStorage.getItem('caveman_leaderboard')) || [];
+        } catch (e) { data = []; }
+        
+        // Merge with defaults if local data is very small
+        if (data.length < 3) {
+            const existingNames = new Set(data.map(d => d.name));
+            DEFAULT_LEADERBOARD.forEach(d => {
+                if (!existingNames.has(d.name)) {
+                    data.push(d);
+                }
+            });
+        }
+        
+        // Sort: time ascending, then score descending
+        data.sort((a, b) => a.time - b.time || b.score - a.score);
+        callback(data);
+    }
+
+    renderLeaderboard(entries) {
+        if (!this.leaderboardBody) return;
+        this.leaderboardBody.innerHTML = '';
+
+        const maxEntries = Math.min(entries.length, 20);
+        for (let i = 0; i < maxEntries; i++) {
+            const e = entries[i];
+            const tr = document.createElement('tr');
+
+            // Medal class for top 3
+            if (i === 0) tr.classList.add('rank-gold');
+            else if (i === 1) tr.classList.add('rank-silver');
+            else if (i === 2) tr.classList.add('rank-bronze');
+
+            const rankIcon = i === 0 ? '\ud83e\udd47' : i === 1 ? '\ud83e\udd48' : i === 2 ? '\ud83e\udd49' : `${i + 1}`;
+
+            const flag = COUNTRY_FLAGS[e.country] || '\ud83c\udff3\ufe0f';
+
+            const badgeHTML = e.perfect ? '<span class="perfect-inline">\ud83c\udfc6 PERFECT</span>' : '-';
+
+            tr.innerHTML = `
+                <td>${rankIcon}</td>
+                <td class="td-name">${this.escapeHTML(e.name)}</td>
+                <td>${flag}</td>
+                <td class="td-time">${this.formatTime(e.time)}</td>
+                <td class="td-score">${e.score.toLocaleString()}</td>
+                <td class="td-badge">${badgeHTML}</td>
+            `;
+            this.leaderboardBody.appendChild(tr);
+        }
+    }
+
+    formatTime(ms) {
+        const totalSeconds = Math.floor(ms / 1000);
+        const minutes = Math.floor(totalSeconds / 60);
+        const seconds = totalSeconds % 60;
+        const hundredths = Math.floor((ms % 1000) / 10);
+        return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${String(hundredths).padStart(2, '0')}`;
+    }
+
+    escapeHTML(str) {
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
+
 
     triggerEndingScene() {
         this.currentState = this.states.ENDING;
@@ -1678,6 +1979,12 @@ class Game {
         if (this.currentState !== this.states.PLAYING) return;
         
         this.gameTick++;
+
+        // Update Rank Mode timer HUD
+        if (this.isRankMode && this.hudTime && this.rankStartTime > 0) {
+            this.rankElapsedTime = Date.now() - this.rankStartTime;
+            this.hudTime.innerText = this.formatTime(this.rankElapsedTime);
+        }
 
         // Decrease screen shake
         if (this.shakeAmount > 0) {
@@ -2154,6 +2461,11 @@ class Game {
 
     damagePlayer(amount) {
         if (this.player.isHurt) return;
+
+        // Track perfect run for rank mode
+        if (amount > 0 && this.isRankMode) {
+            this.isPerfectRun = false;
+        }
 
         this.player.hearts -= amount;
         this.player.isHurt = true;
