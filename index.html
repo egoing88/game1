@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>고인돌 어드벤처 - Retro Caveman Run</title>
+    
+    <!-- Google Fonts for Retro and Modern Typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Outfit:wght@300;400;700;900&family=Press+Start+2P&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="game-container">
+        <!-- Ambient Background Glows -->
+        <div class="bg-glow bg-glow-1"></div>
+        <div class="bg-glow bg-glow-2"></div>
+
+        <!-- Header / Top HUD -->
+        <header class="game-header">
+            <h1 class="logo">CAVEMAN<span>RUN</span></h1>
+            <div class="sound-controls">
+                <button id="btn-music" class="control-btn toggle-active" title="배경음 On/Off">
+                    <svg viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
+                </button>
+                <button id="btn-sound" class="control-btn toggle-active" title="효과음 On/Off">
+                    <svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Gameplay Window -->
+        <div class="game-window">
+            <canvas id="gameCanvas" width="800" height="450"></canvas>
+
+            <!-- Gameplay HUD Overlay -->
+            <div id="game-hud" class="hud-overlay hidden">
+                <div class="hud-item hearts-container">
+                    <span class="hud-label">LIFE</span>
+                    <div id="hud-hearts" class="hearts-list">
+                        <!-- Hearts will be dynamically injected here -->
+                    </div>
+                </div>
+                
+                <div class="hud-item food-container">
+                    <span class="hud-label">FOOD</span>
+                    <div class="progress-bar-outer">
+                        <div id="hud-food-bar" class="progress-bar-inner" style="width: 0%"></div>
+                        <span id="hud-food-text" class="progress-text">0 / 30</span>
+                    </div>
+                </div>
+
+                <div class="hud-item score-container">
+                    <span class="hud-label">SCORE</span>
+                    <span id="hud-score" class="hud-value">000,000</span>
+                </div>
+
+                <div class="hud-item stage-container">
+                    <span class="hud-label">STAGE</span>
+                    <span id="hud-stage" class="hud-value">1</span>
+                </div>
+            </div>
+
+            <!-- Start Menu Screen -->
+            <div id="screen-start" class="screen-overlay">
+                <div class="screen-content">
+                    <h2 class="game-title animate-bounce">고인돌 어드벤처</h2>
+                    <p class="game-subtitle">RETRO CAVEMAN ADVENTURE</p>
+                    
+                    <div class="character-preview">
+                        <!-- Caveman face / graphic will render in CSS / Canvas -->
+                        <div class="caveman-avatar"></div>
+                    </div>
+
+                    <button id="btn-start" class="btn btn-primary btn-lg">게임 시작</button>
+                    
+                    <div class="control-guide">
+                        <h3>조작 방법</h3>
+                        <div class="keys-grid">
+                            <div class="key-item"><span class="key-cap">←</span><span class="key-cap">→</span> <span>좌우 이동</span></div>
+                            <div class="key-item"><span class="key-cap">↑</span> <span>사다리 타기 / 위 보기</span></div>
+                            <div class="key-item"><span class="key-cap">↓</span> <span>사다리 타기 / 엎드리기</span></div>
+                            <div class="key-item"><span class="key-cap">Space</span> <span>공격 (몽둥이)</span></div>
+                            <div class="key-item"><span class="key-cap">W</span> <span>점프</span></div>
+                        </div>
+                        <p class="tip-text">* 몽둥이로 바닥이나 공중을 쳐서 숨겨진 음식을 찾아보세요!</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Game Over Screen -->
+            <div id="screen-gameover" class="screen-overlay hidden">
+                <div class="screen-content bg-danger-glass">
+                    <h2 class="text-danger glow-red">GAME OVER</h2>
+                    <p class="screen-desc">공룡들의 저녁 식사가 되었습니다...</p>
+                    
+                    <div class="score-summary">
+                        <div class="summary-row"><span>최종 점수</span><span id="over-score" class="text-highlight">0</span></div>
+                        <div class="summary-row"><span>최고 점수</span><span id="over-high-score">0</span></div>
+                    </div>
+
+                    <button id="btn-restart" class="btn btn-primary">다시 도전</button>
+                </div>
+            </div>
+
+            <!-- Stage Clear Screen -->
+            <div id="screen-clear" class="screen-overlay hidden">
+                <div class="screen-content bg-success-glass">
+                    <h2 class="text-success glow-green">STAGE CLEAR!</h2>
+                    <p class="screen-desc" id="clear-message">배고픔을 해결하고 살아남았습니다!</p>
+                    
+                    <div class="score-summary">
+                        <div class="summary-row"><span>스테이지 점수</span><span id="clear-score" class="text-highlight">0</span></div>
+                        <div class="summary-row"><span>보너스 점수</span><span id="clear-bonus">0</span></div>
+                    </div>
+
+                    <button id="btn-next" class="btn btn-primary">다음 스테이지</button>
+                </div>
+            </div>
+
+            <!-- Game Clear (Victory) Screen -->
+            <div id="screen-victory" class="screen-overlay hidden">
+                <div class="screen-content bg-victory-glass">
+                    <h2 class="text-victory glow-gold">VICTORY!</h2>
+                    <p class="screen-desc">모든 시련을 극복하고 부족의 영웅이 되었습니다!</p>
+                    
+                    <div class="score-summary">
+                        <div class="summary-row"><span>최종 점수</span><span id="victory-score" class="text-highlight">0</span></div>
+                        <div class="summary-row"><span>최고 점수</span><span id="victory-high-score">0</span></div>
+                    </div>
+
+                    <button id="btn-home" class="btn btn-primary">처음으로</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Touch Controller -->
+        <div id="mobile-controller" class="mobile-controls hidden-desktop">
+            <div class="dpad">
+                <button id="ctrl-left" class="ctrl-btn-game pad-left">◀</button>
+                <div class="dpad-vertical">
+                    <button id="ctrl-up" class="ctrl-btn-game pad-up">▲</button>
+                    <button id="ctrl-down" class="ctrl-btn-game pad-down">▼</button>
+                </div>
+                <button id="ctrl-right" class="ctrl-btn-game pad-right">▶</button>
+            </div>
+            
+            <div class="action-buttons">
+                <button id="ctrl-attack" class="ctrl-btn-game action-attack">HIT</button>
+                <button id="ctrl-jump" class="ctrl-btn-game action-jump">JUMP</button>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="game-footer">
+            <p>© 2026 Caveman Adventure. Built with Love & Retro Vibe.</p>
+        </footer>
+    </div>
+
+    <!-- Scripts -->
+    <script src="audio.js"></script>
+    <script src="sprites.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>
