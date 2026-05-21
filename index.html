@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>고인돌 어드벤처 - Retro Caveman Run</title>
+    <title>Caveman Adventure - Retro Caveman Run</title>
     
     <!-- Google Fonts for Retro and Modern Typography -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -17,8 +17,8 @@
     <div id="portrait-warning" class="portrait-warning">
         <div class="warning-box">
             <div class="phone-icon">🔄📱</div>
-            <h2>화면을 가로로 돌려주세요!</h2>
-            <p>고인돌 어드벤처는 가로 화면에 최적화되어 있습니다.<br>스마트폰의 '자동 회전' 기능을 켠 후 가로로 눕혀서 플레이해 주세요.</p>
+            <h2>Please Rotate Your Device!</h2>
+            <p>Caveman Adventure is optimized for landscape mode.<br>Please enable 'Auto-Rotate' and play in landscape.</p>
         </div>
     </div>
 
@@ -31,13 +31,13 @@
         <header class="game-header">
             <h1 class="logo">CAVEMAN<span>RUN</span></h1>
             <div class="sound-controls">
-                <button id="btn-fullscreen" class="control-btn" title="전체화면 On/Off">
+                <button id="btn-fullscreen" class="control-btn" title="Fullscreen On/Off">
                     <svg viewBox="0 0 24 24" id="svg-fullscreen"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
                 </button>
-                <button id="btn-music" class="control-btn toggle-active" title="배경음 On/Off">
+                <button id="btn-music" class="control-btn toggle-active" title="BGM On/Off">
                     <svg viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
                 </button>
-                <button id="btn-sound" class="control-btn toggle-active" title="효과음 On/Off">
+                <button id="btn-sound" class="control-btn toggle-active" title="SFX On/Off">
                     <svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
                 </button>
             </div>
@@ -83,7 +83,7 @@
             <!-- Start Menu Screen -->
             <div id="screen-start" class="screen-overlay">
                 <div class="screen-content">
-                    <h2 class="game-title animate-bounce">고인돌 어드벤처</h2>
+                    <h2 class="game-title animate-bounce">Caveman Adventure</h2>
                     <p class="game-subtitle">RETRO CAVEMAN ADVENTURE</p>
                     
                     <div class="character-preview">
@@ -92,21 +92,21 @@
                     </div>
 
                     <div class="start-buttons-group">
-                        <button id="btn-start" class="btn btn-primary btn-lg">🎮 일반 모드</button>
-                        <button id="btn-start-rank" class="btn btn-rank btn-lg">🏆 랭크 모드</button>
-                        <button id="btn-view-leaderboard" class="btn btn-leaderboard">📊 랭킹 보기</button>
+                        <button id="btn-start" class="btn btn-primary btn-lg">🎮 Normal Mode</button>
+                        <button id="btn-start-rank" class="btn btn-rank btn-lg">🏆 Rank Mode</button>
+                        <button id="btn-view-leaderboard" class="btn btn-leaderboard">📊 Leaderboard</button>
                     </div>
                     
                     <div class="control-guide">
-                        <h3>조작 방법</h3>
+                        <h3>Controls</h3>
                         <div class="keys-grid">
-                            <div class="key-item"><span class="key-cap">←</span><span class="key-cap">→</span> <span>좌우 이동</span></div>
-                            <div class="key-item"><span class="key-cap">↑</span> <span>사다리 타기 / 위 보기</span></div>
-                            <div class="key-item"><span class="key-cap">↓</span> <span>사다리 타기 / 엎드리기</span></div>
-                            <div class="key-item"><span class="key-cap">Space</span> <span>공격 (몽둥이)</span></div>
-                            <div class="key-item"><span class="key-cap">W</span> <span>점프</span></div>
+                            <div class="key-item"><span class="key-cap">←</span><span class="key-cap">→</span> <span>Move Left/Right</span></div>
+                            <div class="key-item"><span class="key-cap">↑</span> <span>Climb Ladder / Look Up</span></div>
+                            <div class="key-item"><span class="key-cap">↓</span> <span>Climb Ladder / Duck</span></div>
+                            <div class="key-item"><span class="key-cap">Space</span> <span>Attack (Club)</span></div>
+                            <div class="key-item"><span class="key-cap">W</span> <span>Jump</span></div>
                         </div>
-                        <p class="tip-text">* 몽둥이로 바닥이나 공중을 쳐서 숨겨진 음식을 찾아보세요!</p>
+                        <p class="tip-text">* Hit the ground or air with your club to find hidden food!</p>
                     </div>
                 </div>
             </div>
@@ -115,14 +115,14 @@
             <div id="screen-gameover" class="screen-overlay hidden">
                 <div class="screen-content bg-danger-glass">
                     <h2 class="text-danger glow-red">GAME OVER</h2>
-                    <p class="screen-desc">공룡들의 저녁 식사가 되었습니다...</p>
+                    <p class="screen-desc">You became dinosaur dinner...</p>
                     
                     <div class="score-summary">
-                        <div class="summary-row"><span>최종 점수</span><span id="over-score" class="text-highlight">0</span></div>
-                        <div class="summary-row"><span>최고 점수</span><span id="over-high-score">0</span></div>
+                        <div class="summary-row"><span>Final Score</span><span id="over-score" class="text-highlight">0</span></div>
+                        <div class="summary-row"><span>High Score</span><span id="over-high-score">0</span></div>
                     </div>
 
-                    <button id="btn-restart" class="btn btn-primary">다시 도전</button>
+                    <button id="btn-restart" class="btn btn-primary">Retry</button>
                 </div>
             </div>
 
@@ -130,14 +130,14 @@
             <div id="screen-clear" class="screen-overlay hidden">
                 <div class="screen-content bg-success-glass">
                     <h2 class="text-success glow-green">STAGE CLEAR!</h2>
-                    <p class="screen-desc" id="clear-message">배고픔을 해결하고 살아남았습니다!</p>
+                    <p class="screen-desc" id="clear-message">You satisfied your hunger and survived!</p>
                     
                     <div class="score-summary">
-                        <div class="summary-row"><span>스테이지 점수</span><span id="clear-score" class="text-highlight">0</span></div>
-                        <div class="summary-row"><span>보너스 점수</span><span id="clear-bonus">0</span></div>
+                        <div class="summary-row"><span>Stage Score</span><span id="clear-score" class="text-highlight">0</span></div>
+                        <div class="summary-row"><span>Bonus Score</span><span id="clear-bonus">0</span></div>
                     </div>
 
-                    <button id="btn-next" class="btn btn-primary">다음 스테이지</button>
+                    <button id="btn-next" class="btn btn-primary">Next Stage</button>
                 </div>
             </div>
 
@@ -145,14 +145,14 @@
             <div id="screen-victory" class="screen-overlay hidden">
                 <div class="screen-content bg-victory-glass">
                     <h2 class="text-victory glow-gold">VICTORY!</h2>
-                    <p class="screen-desc">모든 시련을 극복하고 부족의 영웅이 되었습니다!</p>
+                    <p class="screen-desc">You overcame all trials and became a tribe hero!</p>
                     
                     <div class="score-summary">
-                        <div class="summary-row"><span>최종 점수</span><span id="victory-score" class="text-highlight">0</span></div>
-                        <div class="summary-row"><span>최고 점수</span><span id="victory-high-score">0</span></div>
+                        <div class="summary-row"><span>Final Score</span><span id="victory-score" class="text-highlight">0</span></div>
+                        <div class="summary-row"><span>High Score</span><span id="victory-high-score">0</span></div>
                     </div>
 
-                    <button id="btn-home" class="btn btn-primary">처음으로</button>
+                    <button id="btn-home" class="btn btn-primary">Go Home</button>
                 </div>
             </div>
 
@@ -160,42 +160,42 @@
             <div id="screen-rank-register" class="screen-overlay hidden">
                 <div class="screen-content bg-victory-glass rank-register-content">
                     <h2 class="text-victory glow-gold">🏆 RANK COMPLETE!</h2>
-                    <p class="screen-desc">모든 스테이지를 클리어했습니다!</p>
+                    <p class="screen-desc">You cleared all stages!</p>
                     
                     <div class="rank-summary">
-                        <div class="rank-stat"><span class="rank-stat-label">⏱ 클리어 시간</span><span id="rank-time" class="rank-stat-value">00:00.00</span></div>
-                        <div class="rank-stat"><span class="rank-stat-label">💰 최종 점수</span><span id="rank-score" class="rank-stat-value">0</span></div>
-                        <div class="rank-stat" id="rank-perfect-row" style="display:none;"><span class="rank-stat-label">🏆 배지</span><span class="rank-stat-value perfect-badge">PERFECT CLEAR</span></div>
+                        <div class="rank-stat"><span class="rank-stat-label">⏱ Clear Time</span><span id="rank-time" class="rank-stat-value">00:00.00</span></div>
+                        <div class="rank-stat"><span class="rank-stat-label">💰 Final Score</span><span id="rank-score" class="rank-stat-value">0</span></div>
+                        <div class="rank-stat" id="rank-perfect-row" style="display:none;"><span class="rank-stat-label">🏆 Badge</span><span class="rank-stat-value perfect-badge">PERFECT CLEAR</span></div>
                     </div>
 
                     <div class="rank-form">
                         <div class="rank-input-group">
-                            <label for="rank-name">닉네임</label>
-                            <input type="text" id="rank-name" maxlength="10" placeholder="이름을 입력하세요" autocomplete="off" />
+                            <label for="rank-name">Nickname</label>
+                            <input type="text" id="rank-name" maxlength="10" placeholder="Enter your name" autocomplete="off" />
                         </div>
                         <div class="rank-input-group">
-                            <label for="rank-country">국가</label>
+                            <label for="rank-country">Country</label>
                             <select id="rank-country">
-                                <option value="KR">🇰🇷 대한민국</option>
-                                <option value="US">🇺🇸 미국</option>
-                                <option value="JP">🇯🇵 일본</option>
-                                <option value="CN">🇨🇳 중국</option>
-                                <option value="GB">🇬🇧 영국</option>
-                                <option value="CA">🇨🇦 캐나다</option>
-                                <option value="AU">🇦🇺 호주</option>
-                                <option value="VN">🇻🇳 베트남</option>
-                                <option value="PH">🇵🇭 필리핀</option>
-                                <option value="TH">🇹🇭 태국</option>
-                                <option value="DE">🇩🇪 독일</option>
-                                <option value="FR">🇫🇷 프랑스</option>
-                                <option value="BR">🇧🇷 브라질</option>
-                                <option value="IN">🇮🇳 인도</option>
-                                <option value="RU">🇷🇺 러시아</option>
+                                <option value="KR">🇰🇷 South Korea</option>
+                                <option value="US">🇺🇸 United States</option>
+                                <option value="JP">🇯🇵 Japan</option>
+                                <option value="CN">🇨🇳 China</option>
+                                <option value="GB">🇬🇧 United Kingdom</option>
+                                <option value="CA">🇨🇦 Canada</option>
+                                <option value="AU">🇦🇺 Australia</option>
+                                <option value="VN">🇻🇳 Vietnam</option>
+                                <option value="PH">🇵🇭 Philippines</option>
+                                <option value="TH">🇹🇭 Thailand</option>
+                                <option value="DE">🇩🇪 Germany</option>
+                                <option value="FR">🇫🇷 France</option>
+                                <option value="BR">🇧🇷 Brazil</option>
+                                <option value="IN">🇮🇳 India</option>
+                                <option value="RU">🇷🇺 Russia</option>
                             </select>
                         </div>
                     </div>
 
-                    <button id="btn-submit-rank" class="btn btn-primary btn-lg">🏅 랭킹 등록</button>
+                    <button id="btn-submit-rank" class="btn btn-primary btn-lg">🏅 Submit Rank</button>
                 </div>
             </div>
 
@@ -203,18 +203,18 @@
             <div id="screen-leaderboard" class="screen-overlay hidden">
                 <div class="screen-content bg-victory-glass leaderboard-content">
                     <h2 class="text-victory glow-gold">📊 LEADERBOARD</h2>
-                    <p class="screen-desc">전 세계 원시인 용사들의 기록</p>
+                    <p class="screen-desc">Records of Caveman Heroes Worldwide</p>
                     
                     <div class="leaderboard-table-wrapper">
                         <table class="leaderboard-table">
                             <thead>
                                 <tr>
                                     <th>#</th>
-                                    <th>이름</th>
-                                    <th>국가</th>
-                                    <th>시간</th>
-                                    <th>점수</th>
-                                    <th>배지</th>
+                                    <th>Name</th>
+                                    <th>Country</th>
+                                    <th>Time</th>
+                                    <th>Score</th>
+                                    <th>Badge</th>
                                 </tr>
                             </thead>
                             <tbody id="leaderboard-body">
@@ -223,7 +223,7 @@
                         </table>
                     </div>
 
-                    <button id="btn-leaderboard-home" class="btn btn-primary">처음으로</button>
+                    <button id="btn-leaderboard-home" class="btn btn-primary">Go Home</button>
                 </div>
             </div>
 
@@ -245,7 +245,7 @@
             </div>
 
             <!-- Mobile Floating Fullscreen Button -->
-            <button id="mobile-fullscreen" class="mobile-fullscreen-btn hidden-desktop" title="전체화면 토글">
+            <button id="mobile-fullscreen" class="mobile-fullscreen-btn hidden-desktop" title="Toggle Fullscreen">
                 <svg viewBox="0 0 24 24" id="svg-mobile-fullscreen"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
             </button>
         </div>

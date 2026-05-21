@@ -2398,7 +2398,7 @@ class Game {
             const bossAlive = (this.stage === 5 || this.stage === 10) && this.enemies.some(e => e.type === 'boss' && e.hp > 0);
             if (bossAlive) {
                 if (this.gameTick % 60 === 0) {
-                    this.spawnFloatingText("보스 공룡을 처치해야 해!", this.goal.x - 40, this.goal.y - 20, '#ef476f');
+                    this.spawnFloatingText("Defeat the Boss Dinosaur!", this.goal.x - 40, this.goal.y - 20, '#ef476f');
                 }
             } else if (this.player.foodCollected >= this.foodNeeded) {
                 if (this.stage === 10) {
@@ -2409,7 +2409,7 @@ class Game {
             } else {
                 // Show floating helper to eat more food
                 if (this.gameTick % 60 === 0) {
-                    this.spawnFloatingText("배고파! 음식을 더 모아와!", this.goal.x - 40, this.goal.y - 20, '#ef476f');
+                    this.spawnFloatingText("Hungry! Gather more food!", this.goal.x - 40, this.goal.y - 20, '#ef476f');
                 }
             }
         }
