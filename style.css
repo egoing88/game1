@@ -526,37 +526,260 @@ body {
     animation: bounce 2s infinite ease-in-out;
 }
 
+/* Portrait Warning Overlay */
+.portrait-warning {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(15, 10, 28, 0.98);
+    backdrop-filter: blur(20px);
+    z-index: 9999;
+    display: none; /* Hidden by default */
+    justify-content: center;
+    align-items: center;
+    padding: 30px;
+    text-align: center;
+    color: var(--text-main);
+}
+
+.portrait-warning .warning-box {
+    max-width: 400px;
+    background: var(--bg-card);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 24px;
+    padding: 40px 30px;
+    box-shadow: var(--shadow-premium);
+}
+
+.portrait-warning h2 {
+    font-family: var(--font-display);
+    font-size: 1.8rem;
+    color: var(--secondary);
+    margin-top: 20px;
+    margin-bottom: 10px;
+}
+
+.portrait-warning p {
+    font-size: 0.95rem;
+    color: var(--text-muted);
+    line-height: 1.6;
+}
+
+.portrait-warning .phone-icon {
+    font-size: 4rem;
+    animation: rotatePhone 2s infinite ease-in-out;
+    display: inline-block;
+}
+
+@keyframes rotatePhone {
+    0%, 100% { transform: rotate(0deg); }
+    50% { transform: rotate(-90deg); }
+}
+
+/* Touch Action Optimization */
+.ctrl-btn-game, #gameCanvas, .mobile-controls {
+    touch-action: none;
+    -webkit-user-drag: none;
+}
+
 /* Desktop Hide Touch Controls */
-@media (min-width: 768px) {
+@media (min-width: 901px) {
     .hidden-desktop {
         display: none !important;
     }
 }
 
-@media (max-width: 767px) {
+/* Mobile responsive layout optimizations */
+@media (max-width: 900px) {
+    body {
+        padding: 0;
+        margin: 0;
+        background: #000;
+        width: 100vw;
+        height: 100vh;
+        overflow: hidden;
+    }
+    
     .game-container {
-        padding: 8px;
-        min-height: auto;
+        width: 100vw;
+        height: 100vh;
+        max-width: none;
+        padding: 0;
+        margin: 0;
+        justify-content: center;
+        align-items: center;
+        position: relative;
     }
-    .logo {
-        font-size: 1.6rem;
+
+    /* Hide header and footer in mobile play mode */
+    .game-header, .game-footer {
+        display: none !important;
     }
-    .control-btn {
-        width: 36px;
-        height: 36px;
+
+    /* Stretch game window to fit the screen */
+    .game-window {
+        width: 100%;
+        height: 100%;
+        border-radius: 0;
+        aspect-ratio: auto;
+        box-shadow: none;
+        border: none;
     }
-    .control-btn svg {
-        width: 16px;
-        height: 16px;
+
+    /* Ensure canvas fits cleanly without stretching */
+    #gameCanvas {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
     }
+
+    /* Overlay mobile controls on top of the canvas */
+    .mobile-controls {
+        position: absolute;
+        bottom: 25px;
+        left: 25px;
+        right: 25px;
+        width: calc(100% - 50px);
+        background: transparent !important;
+        border: none !important;
+        z-index: 20;
+        pointer-events: none;
+        margin-top: 0;
+        padding: 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+    }
+
+    .dpad, .action-buttons {
+        pointer-events: auto;
+    }
+
+    /* Enlarge D-pad for better control */
+    .dpad {
+        grid-template-columns: 65px 65px 65px;
+        grid-template-rows: 60px 60px;
+        gap: 8px;
+    }
+
+    .ctrl-btn-game {
+        width: 65px;
+        height: 55px;
+        font-size: 1.4rem;
+        background: rgba(43, 35, 68, 0.65);
+        border: 2px solid rgba(255, 255, 255, 0.15);
+        border-bottom-width: 4px;
+        border-radius: 16px;
+        backdrop-filter: blur(4px);
+    }
+    
+    .ctrl-btn-game:active {
+        background: rgba(27, 19, 51, 0.95);
+        border-bottom-width: 2px;
+        transform: translateY(2px);
+    }
+
+    .pad-left {
+        grid-column: 1;
+        grid-row: 1 / span 2;
+        height: 100% !important;
+    }
+    
+    .pad-right {
+        grid-column: 3;
+        grid-row: 1 / span 2;
+        height: 100% !important;
+    }
+
+    .dpad-vertical {
+        gap: 8px;
+    }
+    .dpad-vertical .ctrl-btn-game {
+        height: 55px;
+    }
+
+    /* Enlarge action buttons and place them nicely */
+    .action-buttons {
+        gap: 24px;
+        align-items: flex-end;
+    }
+
+    .action-attack, .action-jump {
+        width: 85px;
+        height: 85px;
+        font-size: 1.2rem;
+        border-radius: 50%;
+        backdrop-filter: blur(4px);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border: 2.5px solid rgba(255, 255, 255, 0.25);
+    }
+    
+    .action-attack {
+        background: linear-gradient(135deg, rgba(239, 71, 111, 0.7) 0%, rgba(193, 44, 79, 0.7) 100%);
+    }
+    .action-jump {
+        background: linear-gradient(135deg, rgba(6, 214, 160, 0.7) 0%, rgba(4, 159, 118, 0.7) 100%);
+    }
+
+    .action-attack:active {
+        background: rgba(193, 44, 79, 0.95);
+        transform: scale(0.9);
+    }
+    .action-jump:active {
+        background: rgba(4, 159, 118, 0.95);
+        transform: scale(0.9);
+    }
+
+    /* HUD Layout Adjustments on Mobile */
+    .hud-overlay {
+        padding: 10px 16px;
+        gap: 10px;
+        background: linear-gradient(to bottom, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0) 100%);
+    }
+    
+    .hud-label {
+        font-size: 0.5rem;
+    }
+    
+    .hud-value {
+        font-size: 0.85rem;
+    }
+
+    .progress-bar-outer {
+        height: 14px;
+        border-radius: 7px;
+    }
+    
+    .progress-text {
+        font-size: 0.4rem;
+    }
+
+    .heart-icon {
+        font-size: 0.95rem;
+    }
+
     .screen-content {
-        padding: 20px;
-        border-radius: 18px;
+        padding: 24px;
+        border-radius: 20px;
+        max-width: 480px;
     }
+    
     .game-title {
-        font-size: 2.2rem;
+        font-size: 2.4rem;
     }
+    
     .control-guide {
-        display: none; /* Hide keyboard guide on mobile */
+        display: none;
+    }
+    
+    /* Show portrait warning when in portrait mode */
+    @media (orientation: portrait) {
+        .portrait-warning {
+            display: flex;
+        }
     }
 }

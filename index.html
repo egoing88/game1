@@ -13,6 +13,15 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <!-- Portrait Mode Warning Overlay -->
+    <div id="portrait-warning" class="portrait-warning">
+        <div class="warning-box">
+            <div class="phone-icon">🔄📱</div>
+            <h2>화면을 가로로 돌려주세요!</h2>
+            <p>고인돌 어드벤처는 가로 화면에 최적화되어 있습니다.<br>스마트폰의 '자동 회전' 기능을 켠 후 가로로 눕혀서 플레이해 주세요.</p>
+        </div>
+    </div>
+
     <div class="game-container">
         <!-- Ambient Background Glows -->
         <div class="bg-glow bg-glow-1"></div>
@@ -22,6 +31,9 @@
         <header class="game-header">
             <h1 class="logo">CAVEMAN<span>RUN</span></h1>
             <div class="sound-controls">
+                <button id="btn-fullscreen" class="control-btn" title="전체화면 On/Off">
+                    <svg viewBox="0 0 24 24" id="svg-fullscreen"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
+                </button>
                 <button id="btn-music" class="control-btn toggle-active" title="배경음 On/Off">
                     <svg viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
                 </button>

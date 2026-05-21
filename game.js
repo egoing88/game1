@@ -108,6 +108,38 @@ class Game {
         document.getElementById('btn-next').addEventListener('click', () => this.nextStage());
         document.getElementById('btn-home').addEventListener('click', () => this.goToHome());
 
+        // Fullscreen Toggle
+        const btnFullscreen = document.getElementById('btn-fullscreen');
+        if (btnFullscreen) {
+            btnFullscreen.addEventListener('click', () => this.toggleFullscreen());
+            
+            // Fullscreen change listener to update icon dynamically
+            document.addEventListener('fullscreenchange', () => {
+                const svg = document.getElementById('svg-fullscreen');
+                if (svg) {
+                    if (document.fullscreenElement) {
+                        // Exit Fullscreen Icon
+                        svg.innerHTML = '<path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/>';
+                    } else {
+                        // Enter Fullscreen Icon
+                        svg.innerHTML = '<path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>';
+                    }
+                }
+            });
+        }
+
+        // Mobile Audio context unlock helper (safari/chrome restriction bypass)
+        const unlockAudio = () => {
+            if (window.gameAudio) {
+                window.gameAudio.init();
+                // Clean up listeners
+                window.removeEventListener('touchstart', unlockAudio);
+                window.removeEventListener('mousedown', unlockAudio);
+            }
+        };
+        window.addEventListener('touchstart', unlockAudio);
+        window.addEventListener('mousedown', unlockAudio);
+
         // Audio controls
         const btnMusic = document.getElementById('btn-music');
         const btnSound = document.getElementById('btn-sound');
@@ -132,25 +164,33 @@ class Game {
         const btnAttack = document.getElementById('ctrl-attack');
         const btnJump = document.getElementById('ctrl-jump');
 
-        btnAttack.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            this.triggerPlayerAttack();
-        });
-        btnAttack.addEventListener('mousedown', (e) => {
-            this.triggerPlayerAttack();
-        });
+        if (btnAttack) {
+            btnAttack.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                this.triggerPlayerAttack();
+            }, { passive: false });
+            btnAttack.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                this.triggerPlayerAttack();
+            });
+        }
 
-        btnJump.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            this.triggerPlayerJump();
-        });
-        btnJump.addEventListener('mousedown', (e) => {
-            this.triggerPlayerJump();
-        });
+        if (btnJump) {
+            btnJump.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                this.triggerPlayerJump();
+            }, { passive: false });
+            btnJump.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                this.triggerPlayerJump();
+            });
+        }
     }
 
     bindMobileButton(elementId, commandName) {
         const el = document.getElementById(elementId);
+        if (!el) return;
+        
         const startHandler = (e) => {
             e.preventDefault();
             this.touchControls[commandName] = true;
@@ -160,11 +200,24 @@ class Game {
             this.touchControls[commandName] = false;
         };
 
-        el.addEventListener('touchstart', startHandler);
-        el.addEventListener('touchend', endHandler);
+        el.addEventListener('touchstart', startHandler, { passive: false });
+        el.addEventListener('touchend', endHandler, { passive: false });
         el.addEventListener('mousedown', startHandler);
         el.addEventListener('mouseup', endHandler);
         el.addEventListener('mouseleave', endHandler);
+    }
+
+    toggleFullscreen() {
+        const container = document.querySelector('.game-window');
+        if (!container) return;
+        
+        if (!document.fullscreenElement) {
+            container.requestFullscreen().catch(err => {
+                console.error(`Error attempting to enable fullscreen mode: ${err.message}`);
+            });
+        } else {
+            document.exitFullscreen();
+        }
     }
 
     // Trigger action jump
