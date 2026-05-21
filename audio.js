@@ -34,6 +34,28 @@ class AudioSynth {
                 ['D5', 1.0], ['C5', 1.0],
                 ['B4', 0.5], ['G4', 0.5], ['A4', 1.0],
                 ['E4', 1.0], ['0', 1.0]
+            ],
+            3: [
+                ['A4', 0.25], ['C5', 0.25], ['D#5', 0.25], ['0', 0.25],
+                ['A4', 0.25], ['C5', 0.25], ['D#5', 0.25], ['0', 0.25],
+                ['A4', 0.5], ['C5', 0.5], ['A4', 0.5], ['0', 0.5],
+                ['G4', 0.25], ['A#4', 0.25], ['C#5', 0.25], ['0', 0.25],
+                ['G4', 0.25], ['A#4', 0.25], ['C#5', 0.25], ['0', 0.25],
+                ['G4', 0.5], ['A#4', 0.5], ['G4', 0.5], ['0', 0.5]
+            ],
+            4: [
+                ['C5', 0.5], ['E5', 0.5], ['G5', 0.5], ['C6', 0.5],
+                ['B5', 0.5], ['G5', 0.5], ['A5', 1.0],
+                ['F5', 0.5], ['A5', 0.5], ['C6', 0.5], ['F6', 0.5],
+                ['E6', 0.5], ['C6', 0.5], ['D6', 1.0],
+                ['G5', 0.5], ['B5', 0.5], ['D6', 0.5], ['G6', 0.5],
+                ['F6', 0.5], ['D6', 0.5], ['E6', 1.0]
+            ],
+            5: [
+                ['E4', 0.25], ['E4', 0.25], ['G4', 0.5], ['E4', 0.25], ['E4', 0.25], ['A4', 0.5],
+                ['E4', 0.25], ['E4', 0.25], ['B4', 0.5], ['A4', 0.5], ['G4', 0.5],
+                ['D4', 0.25], ['D4', 0.25], ['F4', 0.5], ['D4', 0.25], ['D4', 0.25], ['G4', 0.5],
+                ['D4', 0.25], ['D4', 0.25], ['A4', 0.5], ['G4', 0.5], ['F4', 0.5]
             ]
         };
 
@@ -42,7 +64,9 @@ class AudioSynth {
             'C4': 261.63, 'C#4': 277.18, 'D4': 293.66, 'D#4': 311.13, 'E4': 329.63, 'F4': 349.23,
             'F#4': 369.99, 'G4': 392.00, 'G#4': 415.30, 'A4': 440.00, 'A#4': 466.16, 'B4': 493.88,
             'C5': 523.25, 'C#5': 554.37, 'D5': 587.33, 'D#5': 622.25, 'E5': 659.25, 'F5': 698.46,
-            'F#5': 739.99, 'G5': 783.99, 'G#5': 830.61, 'A5': 880.00, 'B5': 987.77, '0': 0
+            'F#5': 739.99, 'G5': 783.99, 'G#5': 830.61, 'A5': 880.00, 'B5': 987.77,
+            'C6': 1046.50, 'D6': 1174.66, 'E6': 1318.51, 'F6': 1396.91, 'G6': 1567.98, 'A6': 1760.00, 'B6': 1975.53,
+            '0': 0
         };
     }
 
@@ -307,11 +331,26 @@ class AudioSynth {
                 const osc = this.ctx.createOscillator();
                 const gain = this.ctx.createGain();
                 
-                // stage 1 has triangle (soft), stage 2 has square (heavier/retro)
-                osc.type = stage === 1 ? 'triangle' : 'square';
+                // Determine oscillator wave type and gain based on stage
+                let oscType = 'triangle';
+                let leadGainVal = 0.05;
+                let bassGainVal = 0.04;
+                
+                if (stage === 1 || stage === 4) {
+                    oscType = 'triangle';
+                    leadGainVal = 0.05;
+                } else if (stage === 2 || stage === 5) {
+                    oscType = 'square';
+                    leadGainVal = 0.04;
+                } else if (stage === 3) {
+                    oscType = 'sawtooth';
+                    leadGainVal = 0.03; // Lower volume since sawtooth is louder
+                }
+                
+                osc.type = oscType;
                 osc.frequency.setValueAtTime(freq, noteTime);
                 
-                gain.gain.setValueAtTime(0.05, noteTime);
+                gain.gain.setValueAtTime(leadGainVal, noteTime);
                 // Ramp down before note ends to create distinct articulation
                 gain.gain.exponentialRampToValueAtTime(0.001, noteTime + (duration * beatDuration) - 0.02);
                 
@@ -320,12 +359,12 @@ class AudioSynth {
                 osc.start(noteTime);
                 osc.stop(noteTime + duration * beatDuration);
 
-                // Add a very simple retro bass accompaniment on stage 1 and 2
+                // Add a very simple retro bass accompaniment on stages
                 const bassOsc = this.ctx.createOscillator();
                 const bassGain = this.ctx.createGain();
                 bassOsc.type = 'triangle';
                 bassOsc.frequency.setValueAtTime(freq / 2, noteTime); // One octave lower
-                bassGain.gain.setValueAtTime(0.04, noteTime);
+                bassGain.gain.setValueAtTime(bassGainVal, noteTime);
                 bassGain.gain.exponentialRampToValueAtTime(0.001, noteTime + (duration * beatDuration) - 0.02);
                 
                 bassOsc.connect(bassGain);

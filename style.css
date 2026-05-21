@@ -851,3 +851,30 @@ body {
         }
     }
 }
+
+/* Fullscreen style overrides for document.documentElement target */
+:fullscreen .game-header,
+:-webkit-full-screen .game-header,
+:fullscreen .game-footer,
+:-webkit-full-screen .game-footer {
+    display: none !important;
+}
+
+:fullscreen .game-container,
+:-webkit-full-screen .game-container {
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    max-width: none;
+    padding: 0;
+    margin: 0;
+}
+
+:fullscreen .game-window,
+:-webkit-full-screen .game-window {
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    border: none;
+    border-radius: 0;
+}

@@ -289,21 +289,31 @@ const Sprites = {
             ctx.shadowBlur = 10;
         }
 
+        // Apply scale multiplier for rendering arbitrary sizes
+        ctx.scale(width / 38, height / 36);
+
+        // Determine colors based on size (boss is larger)
+        const isBoss = width > 50;
+        const mainColor = isBoss ? '#9d0208' : '#559c38';
+        const bellyColor = isBoss ? '#dc2f02' : '#3a5f28';
+        const spotColor = isBoss ? '#ffba08' : '#ff7b00';
+        const strokeColor = isBoss ? '#37000a' : '#1e3c15';
+
         // Legs animation
         const legSwing = Math.sin(tick * 0.2) * 5;
 
-        ctx.strokeStyle = '#1e3c15';
+        ctx.strokeStyle = strokeColor;
         ctx.lineWidth = 3;
 
         // Back leg
-        ctx.fillStyle = '#3a5f28';
+        ctx.fillStyle = bellyColor;
         ctx.beginPath();
         ctx.arc(-6 - legSwing, 15, 5, 0, Math.PI * 2);
         ctx.fill();
         ctx.stroke();
 
         // Tail
-        ctx.fillStyle = '#4c8435';
+        ctx.fillStyle = mainColor;
         ctx.beginPath();
         ctx.moveTo(-10, 4);
         ctx.quadraticCurveTo(-22, 6, -24, -2);
@@ -313,28 +323,28 @@ const Sprites = {
         ctx.stroke();
 
         // Big round body
-        ctx.fillStyle = '#559c38';
+        ctx.fillStyle = mainColor;
         ctx.beginPath();
         ctx.ellipse(-2, 3, 14, 11, Math.PI/12, 0, Math.PI*2);
         ctx.fill();
         ctx.stroke();
 
-        // Orange spots on back
-        ctx.fillStyle = '#ff7b00';
+        // spots on back
+        ctx.fillStyle = spotColor;
         ctx.beginPath();
         ctx.arc(-8, -2, 2.5, 0, Math.PI*2);
         ctx.arc(-2, -5, 2, 0, Math.PI*2);
         ctx.fill();
 
         // Head (large dino head)
-        ctx.fillStyle = '#559c38';
+        ctx.fillStyle = mainColor;
         ctx.beginPath();
         ctx.roundRect(0, -18, 18, 14, [6, 6, 2, 6]);
         ctx.fill();
         ctx.stroke();
 
         // Mouth line
-        ctx.strokeStyle = '#1e3c15';
+        ctx.strokeStyle = strokeColor;
         ctx.beginPath();
         ctx.moveTo(8, -8);
         ctx.lineTo(18, -8);
@@ -345,20 +355,20 @@ const Sprites = {
         ctx.beginPath();
         ctx.arc(8, -12, 3.5, 0, Math.PI * 2);
         ctx.fill();
-        ctx.fillStyle = '#000';
+        ctx.fillStyle = isBoss ? '#ffd166' : '#000'; // Golden glowing eye for boss
         ctx.beginPath();
         ctx.arc(7.5, -12, 1.5, 0, Math.PI * 2);
         ctx.fill();
 
         // Tiny cute T-rex arm
-        ctx.fillStyle = '#559c38';
+        ctx.fillStyle = mainColor;
         ctx.beginPath();
         ctx.ellipse(4, 2, 5, 3, Math.PI/4, 0, Math.PI*2);
         ctx.fill();
         ctx.stroke();
 
         // Front leg
-        ctx.fillStyle = '#559c38';
+        ctx.fillStyle = mainColor;
         ctx.beginPath();
         ctx.arc(4 + legSwing, 15, 5, 0, Math.PI * 2);
         ctx.fill();
@@ -670,10 +680,22 @@ const Sprites = {
     },
 
     // Cave backgrounds (Stalactites / Stalagmites)
-    drawCaveDecor(ctx, x, y, height, isCeiling = true) {
+    drawCaveDecor(ctx, x, y, height, isCeiling = true, isVolcanic = false, isIce = false) {
         ctx.save();
-        ctx.fillStyle = '#231c30';
-        ctx.strokeStyle = '#14101d';
+        
+        let fill = '#231c30';
+        let stroke = '#14101d';
+        
+        if (isVolcanic) {
+            fill = '#530f0f';
+            stroke = '#ff5e36';
+        } else if (isIce) {
+            fill = '#90e0ef';
+            stroke = '#ffffff';
+        }
+        
+        ctx.fillStyle = fill;
+        ctx.strokeStyle = stroke;
         ctx.lineWidth = 2;
 
         ctx.beginPath();
