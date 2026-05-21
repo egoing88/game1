@@ -242,12 +242,21 @@ class Game {
             this.player.vy = -11.5;
             this.player.isOnGround = false;
             this.player.isOnLadder = false;
+            this.player.jumpCount = 1;
             window.gameAudio.playJump();
             this.spawnDust(this.player.x + this.player.width/2, this.player.y + this.player.height);
         } else if (this.player.isOnLadder) {
             this.player.vy = -11.5;
             this.player.isOnLadder = false;
+            this.player.jumpCount = 1;
             window.gameAudio.playJump();
+        } else if (this.player.jumpCount < 2) {
+            // Double Jump!
+            this.player.vy = -10.5; // Slightly lower jump force in mid-air
+            this.player.jumpCount = 2;
+            window.gameAudio.playJump();
+            // Mid-air visual effect (extra dust/star particles)
+            this.spawnStars(this.player.x + this.player.width/2, this.player.y + this.player.height, 6);
         }
     }
 
@@ -369,7 +378,8 @@ class Game {
                 hurtTimer: 0,
                 hearts: 3,
                 maxHearts: 3,
-                foodCollected: 0
+                foodCollected: 0,
+                jumpCount: 0
             };
 
             // Ground & Platforms [{x, y, w, h}]
@@ -478,7 +488,8 @@ class Game {
                 hurtTimer: 0,
                 hearts: 3,
                 maxHearts: 3,
-                foodCollected: 0
+                foodCollected: 0,
+                jumpCount: 0
             };
 
             // Cave platforms (more complex jumps and bottomless pits)
@@ -872,7 +883,10 @@ class Game {
         this.player.isOnGround = false;
 
         // Don't collide with platforms while climbing ladder, unless standing on top of one
-        if (this.player.isOnLadder) return;
+        if (this.player.isOnLadder) {
+            this.player.jumpCount = 0;
+            return;
+        }
 
         this.platforms.forEach(platform => {
             // Check collision with platform
@@ -906,6 +920,10 @@ class Game {
                 }
             }
         });
+
+        if (this.player.isOnGround) {
+            this.player.jumpCount = 0;
+        }
     }
 
     updateEntities() {
