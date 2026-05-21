@@ -56,6 +56,42 @@ class AudioSynth {
                 ['E4', 0.25], ['E4', 0.25], ['B4', 0.5], ['A4', 0.5], ['G4', 0.5],
                 ['D4', 0.25], ['D4', 0.25], ['F4', 0.5], ['D4', 0.25], ['D4', 0.25], ['G4', 0.5],
                 ['D4', 0.25], ['D4', 0.25], ['A4', 0.5], ['G4', 0.5], ['F4', 0.5]
+            ],
+            6: [
+                ['C5', 0.5], ['G4', 0.5], ['E4', 0.5], ['G4', 0.5], 
+                ['A4', 0.5], ['C5', 0.5], ['B4', 1.0], 
+                ['D5', 0.5], ['A4', 0.5], ['F4', 0.5], ['A4', 0.5], 
+                ['G4', 0.5], ['B4', 0.5], ['C5', 1.0]
+            ],
+            7: [
+                ['D4', 0.5], ['0', 0.25], ['D4', 0.25], ['F4', 0.5], ['D4', 0.5], 
+                ['G#4', 0.5], ['G4', 0.5], ['F4', 0.5], ['D4', 0.5],
+                ['C4', 0.5], ['0', 0.25], ['C4', 0.25], ['E4', 0.5], ['C4', 0.5], 
+                ['F#4', 0.5], ['F4', 0.5], ['D#4', 0.5], ['C4', 0.5]
+            ],
+            8: [
+                ['E5', 0.25], ['B4', 0.25], ['E5', 0.25], ['G5', 0.25], 
+                ['F#5', 0.25], ['D5', 0.25], ['F#5', 0.25], ['A5', 0.25], 
+                ['G5', 0.25], ['E5', 0.25], ['G5', 0.25], ['B5', 0.25], 
+                ['A5', 0.5], ['B5', 0.5]
+            ],
+            9: [
+                ['C5', 0.5], ['E5', 0.5], ['B4', 0.5], ['D5', 0.5], 
+                ['A4', 0.5], ['C5', 0.5], ['G4', 1.0],
+                ['F4', 0.5], ['A4', 0.5], ['E4', 0.5], ['G4', 0.5], 
+                ['D4', 0.5], ['F4', 0.5], ['C4', 1.0]
+            ],
+            10: [
+                ['A4', 0.25], ['A4', 0.25], ['C5', 0.25], ['A4', 0.25], 
+                ['D5', 0.25], ['A4', 0.25], ['D#5', 0.5], 
+                ['D5', 0.25], ['C5', 0.25], ['A4', 0.25], ['G4', 0.25], 
+                ['A4', 0.5], ['0', 0.5]
+            ],
+            'ending': [
+                ['C5', 0.5], ['D5', 0.5], ['E5', 0.5], ['G5', 0.5], 
+                ['A5', 0.5], ['G5', 0.5], ['C6', 1.0], 
+                ['B5', 0.5], ['A5', 0.5], ['G5', 0.5], ['E5', 0.5], 
+                ['D5', 0.5], ['E5', 0.5], ['C5', 1.0]
             ]
         };
 
@@ -304,6 +340,94 @@ class AudioSynth {
         });
     }
 
+    // Play retro dash sound effect
+    playDash() {
+        if (!this.soundEnabled) return;
+        this.init();
+        const now = this.ctx.currentTime;
+        
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(300, now);
+        osc.frequency.linearRampToValueAtTime(1000, now + 0.12);
+        
+        gain.gain.setValueAtTime(0.1, now);
+        gain.gain.linearRampToValueAtTime(0.001, now + 0.12);
+        
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        
+        osc.start(now);
+        osc.stop(now + 0.12);
+    }
+
+    // Play retro arrow firing sound effect
+    playArrow() {
+        if (!this.soundEnabled) return;
+        this.init();
+        const now = this.ctx.currentTime;
+        
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(600, now);
+        osc.frequency.exponentialRampToValueAtTime(150, now + 0.15);
+        
+        gain.gain.setValueAtTime(0.08, now);
+        gain.gain.linearRampToValueAtTime(0.001, now + 0.15);
+        
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        
+        osc.start(now);
+        osc.stop(now + 0.15);
+    }
+
+    // Continuous pitch bend for charging
+    startChargeSound() {
+        if (!this.soundEnabled) return;
+        this.init();
+        this.stopChargeSound(); // Safety check
+        
+        const now = this.ctx.currentTime;
+        this.chargeOsc = this.ctx.createOscillator();
+        this.chargeGain = this.ctx.createGain();
+        
+        this.chargeOsc.type = 'triangle';
+        this.chargeOsc.frequency.setValueAtTime(200, now);
+        this.chargeOsc.frequency.linearRampToValueAtTime(900, now + 1.5);
+        
+        this.chargeGain.gain.setValueAtTime(0.01, now);
+        this.chargeGain.gain.linearRampToValueAtTime(0.12, now + 0.5);
+        
+        this.chargeOsc.connect(this.chargeGain);
+        this.chargeGain.connect(this.ctx.destination);
+        
+        this.chargeOsc.start(now);
+    }
+
+    stopChargeSound() {
+        if (!this.ctx) return;
+        if (this.chargeOsc) {
+            const now = this.ctx.currentTime;
+            const osc = this.chargeOsc;
+            const gain = this.chargeGain;
+            
+            try {
+                gain.gain.cancelScheduledValues(now);
+                gain.gain.setValueAtTime(gain.gain.value, now);
+                gain.gain.linearRampToValueAtTime(0.001, now + 0.05);
+                osc.stop(now + 0.05);
+            } catch(e) {}
+            
+            this.chargeOsc = null;
+            this.chargeGain = null;
+        }
+    }
+
     // Start 8-bit Background Music loop
     playBGM(stage = 1) {
         if (!this.musicEnabled) return;
@@ -336,13 +460,13 @@ class AudioSynth {
                 let leadGainVal = 0.05;
                 let bassGainVal = 0.04;
                 
-                if (stage === 1 || stage === 4) {
+                if (stage === 1 || stage === 4 || stage === 6 || stage === 9 || stage === 'ending') {
                     oscType = 'triangle';
                     leadGainVal = 0.05;
-                } else if (stage === 2 || stage === 5) {
+                } else if (stage === 2 || stage === 5 || stage === 8) {
                     oscType = 'square';
                     leadGainVal = 0.04;
-                } else if (stage === 3) {
+                } else if (stage === 3 || stage === 7 || stage === 10) {
                     oscType = 'sawtooth';
                     leadGainVal = 0.03; // Lower volume since sawtooth is louder
                 }

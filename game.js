@@ -19,12 +19,14 @@ class Game {
             PLAYING: 'PLAYING',
             GAMEOVER: 'GAMEOVER',
             CLEAR: 'CLEAR',
-            VICTORY: 'VICTORY'
+            VICTORY: 'VICTORY',
+            ENDING: 'ENDING'
         };
         this.currentState = this.states.START;
         
         this.stage = 1;
-        this.maxStages = 5;
+        this.maxStages = 10;
+        this.prevAttackPressed = false;
         this.score = 0;
         this.highScore = parseInt(localStorage.getItem('caveman_highscore')) || 0;
         
@@ -99,11 +101,6 @@ class Game {
             // Prevent scrolling on Space & Arrow keys
             if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) {
                 e.preventDefault();
-            }
-
-            // Keyboard shortcut for attack (Space)
-            if (e.code === 'Space' && this.currentState === this.states.PLAYING) {
-                this.triggerPlayerAttack();
             }
 
             // Keyboard shortcut for jump (W)
@@ -209,14 +206,7 @@ class Game {
         const btnJump = document.getElementById('ctrl-jump');
 
         if (btnAttack) {
-            btnAttack.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                this.triggerPlayerAttack();
-            }, { passive: false });
-            btnAttack.addEventListener('mousedown', (e) => {
-                e.preventDefault();
-                this.triggerPlayerAttack();
-            });
+            this.bindMobileButton('ctrl-attack', 'attack');
         }
 
         if (btnJump) {
@@ -229,6 +219,19 @@ class Game {
                 this.triggerPlayerJump();
             });
         }
+
+        // Canvas ending screen click skip
+        this.canvas.addEventListener('click', () => {
+            if (this.currentState === this.states.ENDING) {
+                this.triggerVictory();
+            }
+        });
+        this.canvas.addEventListener('touchstart', (e) => {
+            if (this.currentState === this.states.ENDING) {
+                e.preventDefault();
+                this.triggerVictory();
+            }
+        }, { passive: false });
     }
 
     bindMobileButton(elementId, commandName) {
@@ -298,6 +301,7 @@ class Game {
     // Trigger action jump
     triggerPlayerJump() {
         if (!this.player || this.currentState !== this.states.PLAYING) return;
+        if (this.player.isCharging || this.player.isDashing) return; // Prevent jump while charging or dashing
         
         if (this.player.isOnGround) {
             this.player.vy = -11.5;
@@ -355,6 +359,38 @@ class Game {
         });
     }
 
+    finishAttackCharging() {
+        window.gameAudio.stopChargeSound();
+        this.player.isCharging = false;
+        
+        if (this.player.chargeTimer >= 25) {
+            // Shoot arrow!
+            const arrowW = 16;
+            const arrowH = 8;
+            const arrowX = this.player.direction === 1 ? this.player.x + this.player.width : this.player.x - arrowW;
+            const arrowY = this.player.y + this.player.height / 2 - 4;
+            const arrowSpeed = 8.0;
+            this.arrows.push({
+                x: arrowX,
+                y: arrowY,
+                w: arrowW,
+                h: arrowH,
+                vx: this.player.direction * arrowSpeed,
+                vy: 0,
+                direction: this.player.direction,
+                dead: false
+            });
+            window.gameAudio.playArrow();
+            this.player.isAttacking = true;
+            this.player.attackTimer = 10;
+            this.player.animState = 'hit';
+        } else {
+            // Regular club swing
+            this.triggerPlayerAttack();
+        }
+        this.player.chargeTimer = 0;
+    }
+
     // Damage an enemy
     damageEnemy(enemy) {
         enemy.hp--;
@@ -377,7 +413,8 @@ class Game {
             
             if (isBoss) {
                 // Drop multiple bouncing meats!
-                for (let i = 0; i < 5; i++) {
+                const meatCount = this.stage === 10 ? 10 : 5;
+                for (let i = 0; i < meatCount; i++) {
                     this.foods.push({
                         x: enemy.x + enemy.w / 2 - 15,
                         y: enemy.y + enemy.h / 2 - 12,
@@ -427,6 +464,35 @@ class Game {
         });
     }
 
+    createPlayerTemplate(x, y) {
+        return {
+            x: x,
+            y: y,
+            vx: 0,
+            vy: 0,
+            width: 34,
+            height: 42,
+            direction: 1, // 1=right, -1=left
+            isOnGround: false,
+            isOnLadder: false,
+            isAttacking: false,
+            attackTimer: 0,
+            isHurt: false,
+            hurtTimer: 0,
+            hearts: 3,
+            maxHearts: 3,
+            foodCollected: 0,
+            jumpCount: 0,
+            // New mechanics state
+            hasDashed: false,
+            isDashing: false,
+            dashTimer: 0,
+            dashDirection: 1,
+            isCharging: false,
+            chargeTimer: 0
+        };
+    }
+
     // Set up Stage data
     loadStage(stageNum) {
         this.stage = stageNum;
@@ -435,6 +501,7 @@ class Game {
         this.shakeAmount = 0;
         this.particles = [];
         this.floatingTexts = [];
+        this.arrows = [];
 
         // Build Level properties
         if (stageNum === 1) {
@@ -442,25 +509,7 @@ class Game {
             this.foodNeeded = 10;
             
             // Player initial position
-            this.player = {
-                x: 100,
-                y: 300,
-                vx: 0,
-                vy: 0,
-                width: 34,
-                height: 42,
-                direction: 1, // 1=right, -1=left
-                isOnGround: false,
-                isOnLadder: false,
-                isAttacking: false,
-                attackTimer: 0,
-                isHurt: false,
-                hurtTimer: 0,
-                hearts: 3,
-                maxHearts: 3,
-                foodCollected: 0,
-                jumpCount: 0
-            };
+            this.player = this.createPlayerTemplate(100, 300);
 
             // Ground & Platforms [{x, y, w, h}]
             this.platforms = [
@@ -552,25 +601,7 @@ class Game {
             this.foodNeeded = 12;
             
             // Player initial position
-            this.player = {
-                x: 80,
-                y: 300,
-                vx: 0,
-                vy: 0,
-                width: 34,
-                height: 42,
-                direction: 1,
-                isOnGround: false,
-                isOnLadder: false,
-                isAttacking: false,
-                attackTimer: 0,
-                isHurt: false,
-                hurtTimer: 0,
-                hearts: 3,
-                maxHearts: 3,
-                foodCollected: 0,
-                jumpCount: 0
-            };
+            this.player = this.createPlayerTemplate(80, 300);
 
             // Cave platforms (more complex jumps and bottomless pits)
             this.platforms = [
@@ -676,25 +707,7 @@ class Game {
             this.stageWidth = 2600;
             this.foodNeeded = 15;
             
-            this.player = {
-                x: 100,
-                y: 300,
-                vx: 0,
-                vy: 0,
-                width: 34,
-                height: 42,
-                direction: 1,
-                isOnGround: false,
-                isOnLadder: false,
-                isAttacking: false,
-                attackTimer: 0,
-                isHurt: false,
-                hurtTimer: 0,
-                hearts: 3,
-                maxHearts: 3,
-                foodCollected: 0,
-                jumpCount: 0
-            };
+            this.player = this.createPlayerTemplate(100, 300);
 
             this.platforms = [
                 { x: 0, y: 390, w: 500, h: 60 },
@@ -779,25 +792,7 @@ class Game {
             this.stageWidth = 2600;
             this.foodNeeded = 15;
 
-            this.player = {
-                x: 80,
-                y: 300,
-                vx: 0,
-                vy: 0,
-                width: 34,
-                height: 42,
-                direction: 1,
-                isOnGround: false,
-                isOnLadder: false,
-                isAttacking: false,
-                attackTimer: 0,
-                isHurt: false,
-                hurtTimer: 0,
-                hearts: 3,
-                maxHearts: 3,
-                foodCollected: 0,
-                jumpCount: 0
-            };
+            this.player = this.createPlayerTemplate(80, 300);
 
             this.platforms = [
                 { x: 0, y: 390, w: 400, h: 60 },
@@ -878,25 +873,7 @@ class Game {
             this.stageWidth = 2500;
             this.foodNeeded = 10;
 
-            this.player = {
-                x: 80,
-                y: 300,
-                vx: 0,
-                vy: 0,
-                width: 34,
-                height: 42,
-                direction: 1,
-                isOnGround: false,
-                isOnLadder: false,
-                isAttacking: false,
-                attackTimer: 0,
-                isHurt: false,
-                hurtTimer: 0,
-                hearts: 3,
-                maxHearts: 3,
-                foodCollected: 0,
-                jumpCount: 0
-            };
+            this.player = this.createPlayerTemplate(80, 300);
 
             this.platforms = [
                 { x: 0, y: 390, w: 400, h: 60 },
@@ -957,6 +934,351 @@ class Game {
             ];
 
             this.goal = { x: 2350, y: 310, w: 60, h: 80, type: 'portal' };
+        } else if (stageNum === 6) {
+            // Stage 6 (Jungle Canopy)
+            this.stageWidth = 2600;
+            this.foodNeeded = 15;
+            this.player = this.createPlayerTemplate(100, 300);
+
+            this.platforms = [
+                { x: 0, y: 390, w: 700, h: 60 },
+                { x: 800, y: 390, w: 900, h: 60 },
+                { x: 1800, y: 390, w: 800, h: 60 },
+                { x: 250, y: 290, w: 180, h: 20 },
+                { x: 480, y: 200, w: 200, h: 20 },
+                { x: 900, y: 300, w: 150, h: 20 },
+                { x: 1100, y: 210, w: 220, h: 20 },
+                { x: 1380, y: 130, w: 180, h: 20 },
+                { x: 1600, y: 240, w: 150, h: 20 },
+                { x: 1900, y: 300, w: 150, h: 20 },
+                { x: 2100, y: 210, w: 180, h: 20 }
+            ];
+
+            this.ladders = [
+                { x: 300, y: 290, w: 24, h: 100 },
+                { x: 1200, y: 210, w: 24, h: 180 },
+                { x: 2150, y: 210, w: 24, h: 180 }
+            ];
+
+            this.foods = [
+                { x: 200, y: 350, w: 30, h: 24, type: 'meat', collected: false },
+                { x: 350, y: 250, w: 24, h: 24, type: 'cherry', collected: false },
+                { x: 550, y: 160, w: 24, h: 24, type: 'apple', collected: false },
+                { x: 950, y: 260, w: 30, h: 24, type: 'meat', collected: false },
+                { x: 1250, y: 170, w: 24, h: 24, type: 'cherry', collected: false },
+                { x: 1450, y: 90, w: 30, h: 24, type: 'meat', collected: false },
+                { x: 1650, y: 200, w: 24, h: 24, type: 'apple', collected: false },
+                { x: 1950, y: 260, w: 30, h: 24, type: 'meat', collected: false },
+                { x: 2200, y: 170, w: 24, h: 24, type: 'cherry', collected: false },
+                { x: 2400, y: 350, w: 30, h: 24, type: 'meat', collected: false }
+            ];
+
+            this.hiddenTriggers = [
+                { x: 600, y: 300, w: 30, h: 30, foodType: 'meat', spawned: false },
+                { x: 1500, y: 350, w: 30, h: 30, foodType: 'apple', spawned: false }
+            ];
+
+            this.enemies = [
+                { x: 400, y: 350, vx: -1.2, w: 38, h: 36, type: 'dino', hp: 1, startX: 400, range: 120, isHurt: false },
+                { x: 1100, y: 350, vx: -1.5, w: 38, h: 36, type: 'dino', hp: 2, startX: 1100, range: 150, isHurt: false },
+                { x: 2000, y: 350, vx: -1.2, w: 38, h: 36, type: 'dino', hp: 2, startX: 2000, range: 180, isHurt: false },
+                { x: 600, y: 150, vy: 1.2, w: 26, h: 26, type: 'spider', hp: 1, startY: 80, range: 150, dir: 1 },
+                { x: 1450, y: 180, vy: 1.0, w: 26, h: 26, type: 'spider', hp: 1, startY: 100, range: 120, dir: 1 },
+                { x: 1600, y: 100, vx: -2.0, w: 36, h: 28, type: 'ptero', hp: 1, startX: 1600, range: 250, isHurt: false }
+            ];
+
+            this.decor = [
+                { x: 50, y: 390, type: 'tree' },
+                { x: 400, y: 390, type: 'tree' },
+                { x: 950, y: 390, type: 'tree' },
+                { x: 1500, y: 390, type: 'tree' },
+                { x: 2300, y: 390, type: 'tree' },
+                { x: 150, y: 60, type: 'cloud', w: 100 },
+                { x: 750, y: 80, type: 'cloud', w: 120 },
+                { x: 1350, y: 50, type: 'cloud', w: 90 },
+                { x: 1950, y: 70, type: 'cloud', w: 110 }
+            ];
+
+            this.goal = { x: 2450, y: 310, w: 70, h: 80, type: 'cave' };
+
+        } else if (stageNum === 7) {
+            // Stage 7 (Magma Core)
+            this.stageWidth = 2800;
+            this.foodNeeded = 15;
+            this.player = this.createPlayerTemplate(80, 300);
+
+            this.platforms = [
+                { x: 0, y: 390, w: 450, h: 60 },
+                { x: 900, y: 390, w: 400, h: 60 },
+                { x: 1700, y: 390, w: 350, h: 60 },
+                { x: 2300, y: 390, w: 500, h: 60 },
+                { x: 520, y: 300, w: 100, h: 20 },
+                { x: 680, y: 220, w: 120, h: 20 },
+                { x: 1400, y: 280, w: 150, h: 20 },
+                { x: 1580, y: 190, w: 100, h: 20 },
+                { x: 2120, y: 300, w: 120, h: 20 },
+                { x: 200, y: 280, w: 150, h: 20 },
+                { x: 1050, y: 290, w: 180, h: 20 },
+                { x: 1200, y: 200, w: 150, h: 20 },
+                { x: 1850, y: 280, w: 150, h: 20 },
+                { x: 2400, y: 290, w: 160, h: 20 }
+            ];
+
+            this.ladders = [
+                { x: 250, y: 280, w: 24, h: 110 },
+                { x: 1100, y: 290, w: 24, h: 100 },
+                { x: 2450, y: 290, w: 24, h: 100 }
+            ];
+
+            this.foods = [
+                { x: 150, y: 350, w: 24, h: 24, type: 'cherry', collected: false },
+                { x: 300, y: 240, w: 30, h: 24, type: 'meat', collected: false },
+                { x: 570, y: 260, w: 24, h: 24, type: 'apple', collected: false },
+                { x: 730, y: 180, w: 30, h: 24, type: 'meat', collected: false },
+                { x: 950, y: 350, w: 24, h: 24, type: 'cherry', collected: false },
+                { x: 1100, y: 250, w: 24, h: 24, type: 'apple', collected: false },
+                { x: 1250, y: 160, w: 30, h: 24, type: 'meat', collected: false },
+                { x: 1450, y: 240, w: 24, h: 24, type: 'cherry', collected: false },
+                { x: 1750, y: 350, w: 30, h: 24, type: 'meat', collected: false },
+                { x: 1900, y: 240, w: 24, h: 24, type: 'apple', collected: false },
+                { x: 2180, y: 260, w: 30, h: 24, type: 'meat', collected: false },
+                { x: 2350, y: 350, w: 24, h: 24, type: 'cherry', collected: false },
+                { x: 2500, y: 250, w: 30, h: 24, type: 'meat', collected: false }
+            ];
+
+            this.hiddenTriggers = [
+                { x: 1350, y: 320, w: 30, h: 30, foodType: 'meat', spawned: false },
+                { x: 2000, y: 320, w: 30, h: 30, foodType: 'meat', spawned: false }
+            ];
+
+            this.enemies = [
+                { x: 300, y: 350, vx: -1.3, w: 38, h: 36, type: 'dino', hp: 1, startX: 300, range: 80, isHurt: false },
+                { x: 1000, y: 350, vx: -1.2, w: 38, h: 36, type: 'dino', hp: 2, startX: 1000, range: 100, isHurt: false },
+                { x: 1800, y: 350, vx: -1.4, w: 38, h: 36, type: 'dino', hp: 2, startX: 1800, range: 100, isHurt: false },
+                { x: 2500, y: 350, vx: -1.6, w: 38, h: 36, type: 'dino', hp: 3, startX: 2500, range: 120, isHurt: false },
+                { x: 750, y: 150, vy: 1.3, w: 26, h: 26, type: 'spider', hp: 1, startY: 80, range: 140, dir: 1 },
+                { x: 1500, y: 120, vy: 1.5, w: 26, h: 26, type: 'spider', hp: 1, startY: 80, range: 180, dir: 1 },
+                { x: 600, y: 100, vx: -2.2, w: 36, h: 28, type: 'ptero', hp: 1, startX: 600, range: 200, isHurt: false },
+                { x: 1300, y: 80, vx: -2.0, w: 36, h: 28, type: 'ptero', hp: 1, startX: 1300, range: 250, isHurt: false },
+                { x: 2100, y: 100, vx: -2.4, w: 36, h: 28, type: 'ptero', hp: 1, startX: 2100, range: 200, isHurt: false }
+            ];
+
+            this.decor = [
+                { x: 150, y: 0, type: 'cave_top', h: 60 },
+                { x: 450, y: 0, type: 'cave_top', h: 50 },
+                { x: 800, y: 0, type: 'cave_top', h: 80 },
+                { x: 1100, y: 0, type: 'cave_top', h: 40 },
+                { x: 1450, y: 0, type: 'cave_top', h: 70 },
+                { x: 1800, y: 0, type: 'cave_top', h: 60 },
+                { x: 2200, y: 0, type: 'cave_top', h: 70 },
+                { x: 2500, y: 0, type: 'cave_top', h: 50 },
+                { x: 350, y: 390, type: 'cave_bot', h: 40 },
+                { x: 1250, y: 390, type: 'cave_bot', h: 30 },
+                { x: 1950, y: 390, type: 'cave_bot', h: 35 },
+                { x: 2650, y: 390, type: 'cave_bot', h: 45 }
+            ];
+
+            this.goal = { x: 2700, y: 310, w: 60, h: 80, type: 'portal' };
+
+        } else if (stageNum === 8) {
+            // Stage 8 (Cyber Temple)
+            this.stageWidth = 2700;
+            this.foodNeeded = 15;
+            this.player = this.createPlayerTemplate(80, 300);
+
+            this.platforms = [
+                { x: 0, y: 390, w: 600, h: 60 },
+                { x: 750, y: 390, w: 800, h: 60 },
+                { x: 1700, y: 390, w: 1000, h: 60 },
+                { x: 200, y: 280, w: 150, h: 20 },
+                { x: 400, y: 200, w: 160, h: 20 },
+                { x: 800, y: 290, w: 180, h: 20 },
+                { x: 1050, y: 210, w: 150, h: 20 },
+                { x: 1250, y: 130, w: 150, h: 20 },
+                { x: 1450, y: 220, w: 180, h: 20 },
+                { x: 1850, y: 290, w: 150, h: 20 },
+                { x: 2050, y: 200, w: 160, h: 20 },
+                { x: 2250, y: 280, w: 150, h: 20 }
+            ];
+
+            this.ladders = [
+                { x: 250, y: 280, w: 24, h: 110 },
+                { x: 900, y: 290, w: 24, h: 100 },
+                { x: 2100, y: 200, w: 24, h: 190 }
+            ];
+
+            this.foods = [
+                { x: 150, y: 350, w: 24, h: 24, type: 'cherry', collected: false },
+                { x: 280, y: 240, w: 30, h: 24, type: 'meat', collected: false },
+                { x: 450, y: 160, w: 24, h: 24, type: 'apple', collected: false },
+                { x: 820, y: 250, w: 24, h: 24, type: 'cherry', collected: false },
+                { x: 920, y: 350, w: 30, h: 24, type: 'meat', collected: false },
+                { x: 1100, y: 170, w: 24, h: 24, type: 'apple', collected: false },
+                { x: 1300, y: 90, w: 30, h: 24, type: 'meat', collected: false },
+                { x: 1500, y: 180, w: 24, h: 24, type: 'cherry', collected: false },
+                { x: 1800, y: 350, w: 30, h: 24, type: 'meat', collected: false },
+                { x: 1900, y: 250, w: 24, h: 24, type: 'apple', collected: false },
+                { x: 2100, y: 160, w: 30, h: 24, type: 'meat', collected: false },
+                { x: 2300, y: 240, w: 24, h: 24, type: 'cherry', collected: false }
+            ];
+
+            this.hiddenTriggers = [
+                { x: 500, y: 280, w: 30, h: 30, foodType: 'meat', spawned: false },
+                { x: 1600, y: 280, w: 30, h: 30, foodType: 'meat', spawned: false }
+            ];
+
+            this.enemies = [
+                { x: 350, y: 350, vx: -1.5, w: 38, h: 36, type: 'dino', hp: 2, startX: 350, range: 100, isHurt: false },
+                { x: 1000, y: 350, vx: -1.3, w: 38, h: 36, type: 'dino', hp: 2, startX: 1000, range: 120, isHurt: false },
+                { x: 1900, y: 350, vx: -1.5, w: 38, h: 36, type: 'dino', hp: 2, startX: 1900, range: 150, isHurt: false },
+                { x: 2400, y: 350, vx: -1.8, w: 38, h: 36, type: 'dino', hp: 3, startX: 2400, range: 100, isHurt: false },
+                { x: 500, y: 120, vy: 1.5, w: 26, h: 26, type: 'spider', hp: 1, startY: 80, range: 150, dir: 1 },
+                { x: 1350, y: 150, vy: 1.2, w: 26, h: 26, type: 'spider', hp: 1, startY: 90, range: 130, dir: 1 },
+                { x: 600, y: 80, vx: -2.5, w: 36, h: 28, type: 'ptero', hp: 1, startX: 600, range: 250, isHurt: false },
+                { x: 1500, y: 100, vx: -2.6, w: 36, h: 28, type: 'ptero', hp: 1, startX: 1500, range: 300, isHurt: false }
+            ];
+
+            this.decor = [
+                { x: 100, y: 0, type: 'cave_top', h: 50 },
+                { x: 400, y: 0, type: 'cave_top', h: 70 },
+                { x: 800, y: 0, type: 'cave_top', h: 60 },
+                { x: 1200, y: 0, type: 'cave_top', h: 80 },
+                { x: 1600, y: 0, type: 'cave_top', h: 50 },
+                { x: 2000, y: 0, type: 'cave_top', h: 70 },
+                { x: 2400, y: 0, type: 'cave_top', h: 60 },
+                { x: 300, y: 390, type: 'cave_bot', h: 40 },
+                { x: 1100, y: 390, type: 'cave_bot', h: 30 },
+                { x: 1800, y: 390, type: 'cave_bot', h: 35 },
+                { x: 2500, y: 390, type: 'cave_bot', h: 45 }
+            ];
+
+            this.goal = { x: 2600, y: 310, w: 60, h: 80, type: 'portal' };
+
+        } else if (stageNum === 9) {
+            // Stage 9 (Crystal Mine)
+            this.stageWidth = 2600;
+            this.foodNeeded = 15;
+            this.player = this.createPlayerTemplate(100, 300);
+
+            this.platforms = [
+                { x: 0, y: 390, w: 500, h: 60 },
+                { x: 650, y: 390, w: 800, h: 60 },
+                { x: 1600, y: 390, w: 1000, h: 60 },
+                { x: 200, y: 290, w: 150, h: 20 },
+                { x: 400, y: 210, w: 150, h: 20 },
+                { x: 750, y: 280, w: 180, h: 20 },
+                { x: 1000, y: 200, w: 180, h: 20 },
+                { x: 1250, y: 280, w: 160, h: 20 },
+                { x: 1450, y: 190, w: 150, h: 20 },
+                { x: 1750, y: 280, w: 180, h: 20 },
+                { x: 1950, y: 200, w: 180, h: 20 },
+                { x: 2200, y: 290, w: 150, h: 20 }
+            ];
+
+            this.ladders = [
+                { x: 300, y: 290, w: 24, h: 100 },
+                { x: 1100, y: 200, w: 24, h: 190 },
+                { x: 2300, y: 290, w: 24, h: 100 }
+            ];
+
+            this.foods = [
+                { x: 150, y: 350, w: 24, h: 24, type: 'cherry', collected: false },
+                { x: 250, y: 250, w: 30, h: 24, type: 'meat', collected: false },
+                { x: 450, y: 170, w: 24, h: 24, type: 'apple', collected: false },
+                { x: 780, y: 240, w: 24, h: 24, type: 'cherry', collected: false },
+                { x: 880, y: 350, w: 30, h: 24, type: 'meat', collected: false },
+                { x: 1050, y: 160, w: 24, h: 24, type: 'apple', collected: false },
+                { x: 1300, y: 240, w: 30, h: 24, type: 'meat', collected: false },
+                { x: 1500, y: 150, w: 24, h: 24, type: 'cherry', collected: false },
+                { x: 1700, y: 350, w: 30, h: 24, type: 'meat', collected: false },
+                { x: 1800, y: 240, w: 24, h: 24, type: 'apple', collected: false },
+                { x: 2000, y: 160, w: 30, h: 24, type: 'meat', collected: false },
+                { x: 2250, y: 250, w: 24, h: 24, type: 'cherry', collected: false }
+            ];
+
+            this.hiddenTriggers = [
+                { x: 600, y: 280, w: 30, h: 30, foodType: 'meat', spawned: false },
+                { x: 1550, y: 280, w: 30, h: 30, foodType: 'meat', spawned: false }
+            ];
+
+            this.enemies = [
+                { x: 350, y: 350, vx: -1.2, w: 38, h: 36, type: 'dino', hp: 2, startX: 350, range: 100, isHurt: false },
+                { x: 1000, y: 350, vx: -1.4, w: 38, h: 36, type: 'dino', hp: 2, startX: 1000, range: 150, isHurt: false },
+                { x: 1800, y: 350, vx: -1.3, w: 38, h: 36, type: 'dino', hp: 3, startX: 1800, range: 120, isHurt: false },
+                { x: 500, y: 150, vy: 1.1, w: 26, h: 26, type: 'spider', hp: 1, startY: 90, range: 140, dir: 1 },
+                { x: 1350, y: 180, vy: 1.3, w: 26, h: 26, type: 'spider', hp: 1, startY: 100, range: 150, dir: 1 },
+                { x: 600, y: 100, vx: -2.0, w: 36, h: 28, type: 'ptero', hp: 1, startX: 600, range: 200, isHurt: false },
+                { x: 1500, y: 80, vx: -2.2, w: 36, h: 28, type: 'ptero', hp: 1, startX: 1500, range: 250, isHurt: false }
+            ];
+
+            this.decor = [
+                { x: 100, y: 0, type: 'cave_top', h: 60 },
+                { x: 400, y: 0, type: 'cave_top', h: 50 },
+                { x: 750, y: 0, type: 'cave_top', h: 80 },
+                { x: 1100, y: 0, type: 'cave_top', h: 40 },
+                { x: 1450, y: 0, type: 'cave_top', h: 70 },
+                { x: 1800, y: 0, type: 'cave_top', h: 60 },
+                { x: 2150, y: 0, type: 'cave_top', h: 70 },
+                { x: 2450, y: 0, type: 'cave_top', h: 50 },
+                { x: 300, y: 390, type: 'cave_bot', h: 40 },
+                { x: 1200, y: 390, type: 'cave_bot', h: 30 },
+                { x: 1900, y: 390, type: 'cave_bot', h: 35 }
+            ];
+
+            this.goal = { x: 2500, y: 310, w: 60, h: 80, type: 'portal' };
+
+        } else if (stageNum === 10) {
+            // Stage 10 (Final Castle & Final Boss Mega Dino King)
+            this.stageWidth = 2400;
+            this.foodNeeded = 10;
+            this.player = this.createPlayerTemplate(100, 300);
+
+            this.platforms = [
+                { x: 0, y: 390, w: 600, h: 60 },
+                { x: 700, y: 390, w: 400, h: 60 },
+                { x: 1250, y: 390, w: 1150, h: 60 },
+                { x: 200, y: 290, w: 150, h: 20 },
+                { x: 450, y: 220, w: 150, h: 20 },
+                { x: 800, y: 280, w: 180, h: 20 },
+                { x: 1000, y: 190, w: 150, h: 20 },
+                { x: 1400, y: 290, w: 150, h: 20 },
+                { x: 1650, y: 200, w: 200, h: 20 },
+                { x: 1950, y: 290, w: 150, h: 20 }
+            ];
+
+            this.ladders = [
+                { x: 300, y: 290, w: 24, h: 100 },
+                { x: 900, y: 280, w: 24, h: 110 }
+            ];
+
+            this.foods = [
+                { x: 150, y: 350, w: 24, h: 24, type: 'cherry', collected: false },
+                { x: 500, y: 180, w: 24, h: 24, type: 'apple', collected: false }
+            ];
+
+            this.hiddenTriggers = [];
+
+            this.enemies = [
+                { x: 1700, y: 280, vx: -2.0, w: 110, h: 100, type: 'boss', hp: 15, startX: 1800, range: 450, isHurt: false },
+                { x: 350, y: 350, vx: -1.2, w: 38, h: 36, type: 'dino', hp: 2, startX: 350, range: 80, isHurt: false },
+                { x: 850, y: 350, vx: -1.4, w: 38, h: 36, type: 'dino', hp: 2, startX: 850, range: 100, isHurt: false },
+                { x: 550, y: 100, vy: 1.5, w: 26, h: 26, type: 'spider', hp: 1, startY: 80, range: 140, dir: 1 }
+            ];
+
+            this.decor = [
+                { x: 100, y: 0, type: 'cave_top', h: 60 },
+                { x: 400, y: 0, type: 'cave_top', h: 50 },
+                { x: 700, y: 0, type: 'cave_top', h: 70 },
+                { x: 1000, y: 0, type: 'cave_top', h: 40 },
+                { x: 1300, y: 0, type: 'cave_top', h: 80 },
+                { x: 1600, y: 0, type: 'cave_top', h: 50 },
+                { x: 1900, y: 0, type: 'cave_top', h: 70 },
+                { x: 2200, y: 0, type: 'cave_top', h: 60 },
+                { x: 300, y: 390, type: 'cave_bot', h: 35 },
+                { x: 950, y: 390, type: 'cave_bot', h: 40 }
+            ];
+
+            this.goal = { x: 2250, y: 310, w: 60, h: 80, type: 'portal' };
         }
         
         this.updateHUD();
@@ -1054,6 +1376,264 @@ class Game {
         window.gameAudio.playVictory();
     }
 
+    triggerEndingScene() {
+        this.currentState = this.states.ENDING;
+        this.hud.classList.add('hidden');
+        window.gameAudio.playBGM('ending');
+        this.endingTick = 0;
+        this.endingCavemanX = -50;
+        this.endingCavemanY = 348; // aligned with ground y=390 (caveman height is 42)
+        this.endingMeatX = -50;
+        this.endingMeatY = 338;
+        this.endingMeatCarried = true;
+        
+        // Spawn tribe members at fire area
+        // Bonfire will be at x = 400
+        this.tribeMembers = [
+            { x: 340, y: 348, dir: 1, state: 'idle', jumpTimer: 0 },
+            { x: 460, y: 348, dir: -1, state: 'idle', jumpTimer: 0 }
+        ];
+        
+        // Bonfire sparks
+        this.bonfireSparks = [];
+        
+        // Scrolling credits
+        this.creditY = 450;
+        this.credits = [
+            "CAVEMAN ADVENTURE",
+            "",
+            "DEVELOPED BY",
+            "ANTIGRAVITY DESIGN CO.",
+            "",
+            "AUDIO SYNTHESIS",
+            "WEB AUDIO API CHIPTUNE",
+            "",
+            "VECTOR SPRITES",
+            "HTML5 PROCEDURAL CANVAS",
+            "",
+            "SPECIAL THANKS",
+            "TEAM EGOING",
+            "AND",
+            "YOU (THE BRAVE CAVEMAN!)",
+            "",
+            "CONGRATULATIONS!",
+            "YOU SAVED THE TRIBE!",
+            "",
+            "- TOUCH OR CLICK TO FINISH -"
+        ];
+    }
+
+    updateEndingScene() {
+        this.endingTick++;
+        
+        // Update bonfire sparks
+        if (this.endingTick % 3 === 0) {
+            this.bonfireSparks.push({
+                x: 400 + (Math.random() * 20 - 10),
+                y: 380,
+                vx: Math.random() * 1 - 0.5,
+                vy: -1.5 - Math.random() * 1.5,
+                life: 30 + Math.random() * 20,
+                size: 2 + Math.random() * 3
+            });
+        }
+        this.bonfireSparks.forEach(s => {
+            s.x += s.vx;
+            s.y += s.vy;
+            s.life--;
+        });
+        this.bonfireSparks = this.bonfireSparks.filter(s => s.life > 0);
+        
+        // Update Caveman walking from left to campfire
+        if (this.endingCavemanX < 240) {
+            this.endingCavemanX += 1.5;
+            this.endingCavemanState = 'walk';
+            this.endingMeatX = this.endingCavemanX + 4;
+            this.endingMeatY = this.endingCavemanY - 6;
+        } else {
+            // He reached the camp!
+            if (this.endingMeatCarried) {
+                // Drop meat on the floor
+                this.endingMeatCarried = false;
+                this.endingMeatX = 270;
+                this.endingMeatY = 366; // ground level for meat
+                // Play victory sound once
+                window.gameAudio.playVictory();
+            }
+            
+            // Caveman dances
+            this.endingCavemanState = 'jump';
+            // Simple jump cycle
+            const bounce = Math.abs(Math.sin(this.endingTick * 0.15)) * 10;
+            this.endingCavemanY = 348 - bounce;
+        }
+        
+        // Update Tribe members dancing
+        this.tribeMembers.forEach((member, i) => {
+            // Dance animation
+            if (this.endingTick % 60 === i * 30) {
+                member.state = 'jump';
+            }
+            if (member.state === 'jump') {
+                member.jumpTimer += 0.15;
+                const bounce = Math.abs(Math.sin(member.jumpTimer)) * 15;
+                member.y = 348 - bounce;
+                if (member.jumpTimer >= Math.PI) {
+                    member.state = 'walk';
+                    member.jumpTimer = 0;
+                    member.y = 348;
+                }
+            } else {
+                member.state = 'walk';
+                member.y = 348;
+            }
+        });
+        
+        // Scroll credits
+        if (this.creditY > -500) {
+            this.creditY -= 0.6;
+        }
+    }
+
+    drawEndingScene() {
+        this.ctx.clearRect(0, 0, this.width, this.height);
+        
+        // 1. Clear night sky gradient
+        const gradient = this.ctx.createLinearGradient(0, 0, 0, this.height);
+        gradient.addColorStop(0, '#040410');
+        gradient.addColorStop(0.6, '#140c26');
+        gradient.addColorStop(1, '#2c1e45');
+        this.ctx.fillStyle = gradient;
+        this.ctx.fillRect(0, 0, this.width, this.height);
+        
+        // Draw twinkling stars in the sky
+        this.ctx.fillStyle = '#ffffff';
+        for (let i = 0; i < 40; i++) {
+            const sx = (Math.sin(i * 123.45 + this.endingTick * 0.02) + 1) * 0.5 * this.width;
+            const sy = (Math.cos(i * 543.21 + this.endingTick * 0.01) + 1) * 0.5 * 250; // upper sky
+            const size = (Math.sin(this.endingTick * 0.1 + i) + 1) * 0.5 * 1.5 + 0.5;
+            this.ctx.fillRect(sx, sy, size, size);
+        }
+        
+        // 2. Draw ground
+        this.ctx.fillStyle = '#60993e'; // Grass top green
+        this.ctx.fillRect(0, 390, this.width, 10);
+        this.ctx.fillStyle = '#4e331c'; // Dirt brown
+        this.ctx.fillRect(0, 400, this.width, 50);
+        
+        // Grass strands decoration
+        this.ctx.strokeStyle = '#82c057';
+        this.ctx.lineWidth = 1.5;
+        for (let px = 5; px < this.width; px += 20) {
+            this.ctx.beginPath();
+            this.ctx.moveTo(px, 390);
+            this.ctx.lineTo(px + (px % 4 - 2), 386);
+            this.ctx.stroke();
+        }
+        
+        // 3. Draw trees
+        window.Sprites.drawTree(this.ctx, 80, 390, 80);
+        window.Sprites.drawTree(this.ctx, 160, 390, 95);
+        window.Sprites.drawTree(this.ctx, 640, 390, 90);
+        window.Sprites.drawTree(this.ctx, 720, 390, 80);
+        
+        // 4. Draw Bonfire
+        this.ctx.strokeStyle = '#5c4033';
+        this.ctx.lineWidth = 6;
+        this.ctx.lineCap = 'round';
+        this.ctx.beginPath();
+        this.ctx.moveTo(385, 390); this.ctx.lineTo(415, 380);
+        this.ctx.moveTo(415, 390); this.ctx.lineTo(385, 380);
+        this.ctx.stroke();
+        
+        // Fire sparks
+        this.ctx.save();
+        this.bonfireSparks.forEach(s => {
+            this.ctx.fillStyle = `rgba(255, ${Math.floor(100 + Math.random() * 155)}, 0, ${s.life / 50})`;
+            this.ctx.beginPath();
+            this.ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+            this.ctx.fill();
+        });
+        this.ctx.restore();
+        
+        // Flame body
+        const flameHeight = 35 + Math.sin(this.endingTick * 0.3) * 8;
+        const flameGrad = this.ctx.createLinearGradient(400, 390, 400, 390 - flameHeight);
+        flameGrad.addColorStop(0, '#ef476f');
+        flameGrad.addColorStop(0.5, '#ffd166');
+        flameGrad.addColorStop(1, 'rgba(255,255,255,0)');
+        this.ctx.fillStyle = flameGrad;
+        this.ctx.beginPath();
+        this.ctx.moveTo(385, 390);
+        this.ctx.quadraticCurveTo(400, 390 - flameHeight * 1.2, 400, 390 - flameHeight);
+        this.ctx.quadraticCurveTo(400, 390 - flameHeight * 1.2, 415, 390);
+        this.ctx.closePath();
+        this.ctx.fill();
+        
+        // 5. Draw meat chunk
+        window.Sprites.drawMeat(this.ctx, this.endingMeatX, this.endingMeatY, 40, 32);
+        
+        // 6. Draw Hero Caveman
+        window.Sprites.drawCaveman(
+            this.ctx,
+            this.endingCavemanX,
+            this.endingCavemanY,
+            34,
+            42,
+            this.endingCavemanState,
+            1, // face right
+            this.endingTick,
+            false
+        );
+        
+        // 7. Draw Tribe members
+        this.tribeMembers.forEach(member => {
+            window.Sprites.drawCaveman(
+                this.ctx,
+                member.x,
+                member.y,
+                34,
+                42,
+                member.state,
+                member.dir,
+                this.endingTick,
+                false
+            );
+        });
+        
+        // 8. Draw scrolling credits overlay
+        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+        this.ctx.fillRect(480, 0, 320, this.height);
+        
+        this.ctx.save();
+        this.ctx.textAlign = 'center';
+        let currentY = this.creditY;
+        this.credits.forEach(line => {
+            if (currentY > -20 && currentY < this.height + 20) {
+                if (line.startsWith("-") || line.startsWith("CAVEMAN")) {
+                    this.ctx.fillStyle = '#ffd166';
+                    this.ctx.font = "bold 9px 'Press Start 2P', monospace";
+                } else if (line === "") {
+                    // spacer
+                } else {
+                    this.ctx.fillStyle = '#ffffff';
+                    this.ctx.font = "bold 8px 'Press Start 2P', monospace";
+                }
+                this.ctx.fillText(line, 640, currentY);
+            }
+            currentY += 22;
+        });
+        this.ctx.restore();
+        
+        // Epilogue title bar
+        this.ctx.fillStyle = 'rgba(0,0,0,0.6)';
+        this.ctx.fillRect(0, 0, 480, 32);
+        this.ctx.fillStyle = '#ffd166';
+        this.ctx.font = "bold 10px 'Press Start 2P', monospace";
+        this.ctx.textAlign = 'left';
+        this.ctx.fillText("EPILOGUE: THE TRIBE FEAST", 15, 20);
+    }
+
     // Update Top Heads-up display
     updateHUD() {
         if (!this.player) return;
@@ -1091,6 +1671,10 @@ class Game {
 
     // Core Game Update Loop
     update() {
+        if (this.currentState === this.states.ENDING) {
+            this.updateEndingScene();
+            return;
+        }
         if (this.currentState !== this.states.PLAYING) return;
         
         this.gameTick++;
@@ -1138,6 +1722,31 @@ class Game {
     }
 
     handlePlayerControls() {
+        const keyAttack = this.keys['Space'] || this.touchControls.attack;
+        const attackJustPressed = keyAttack && !this.prevAttackPressed;
+        const attackJustReleased = !keyAttack && this.prevAttackPressed;
+        this.prevAttackPressed = keyAttack;
+
+        // If dashing, handle dash timing and skip regular inputs
+        if (this.player.isDashing) {
+            this.player.dashTimer--;
+            if (this.player.dashTimer <= 0) {
+                this.player.isDashing = false;
+            }
+            if (this.gameTick % 3 === 0) {
+                this.spawnStars(this.player.x + this.player.width/2, this.player.y + this.player.height/2, 2);
+            }
+            this.player.animState = 'hit'; // Use swing attack frame during dash
+            return;
+        }
+
+        // Cancel charge if player falls off the ground
+        if (this.player.isCharging && !this.player.isOnGround) {
+            this.player.isCharging = false;
+            this.player.chargeTimer = 0;
+            window.gameAudio.stopChargeSound();
+        }
+
         // Left/Right Movements
         let isMoving = false;
         
@@ -1146,10 +1755,46 @@ class Game {
         const keyUp = this.keys['ArrowUp'] || this.keys['KeyW'] || this.touchControls.up;
         const keyDown = this.keys['ArrowDown'] || this.keys['KeyS'] || this.touchControls.down;
 
-        // Duck (Crouch)
-        this.player.isCrouching = keyDown && this.player.isOnGround && !this.player.isOnLadder;
+        // Handle mid-air dash attack trigger
+        const isAirborne = !this.player.isOnGround && !this.player.isOnLadder;
+        if (isAirborne && attackJustPressed && !this.player.hasDashed) {
+            this.player.isDashing = true;
+            this.player.dashTimer = 12;
+            this.player.hasDashed = true;
+            this.player.dashDirection = this.player.direction;
+            this.player.vx = this.player.dashDirection * 12.0;
+            this.player.vy = 0;
+            window.gameAudio.playDash();
+            this.spawnStars(this.player.x + this.player.width/2, this.player.y + this.player.height/2, 6);
+            return;
+        }
 
-        if (!this.player.isCrouching) {
+        // Handle ground charging trigger / progress
+        if (this.player.isOnGround) {
+            if (attackJustPressed && !this.player.isCharging && !this.player.isAttacking) {
+                this.player.isCharging = true;
+                this.player.chargeTimer = 0;
+                window.gameAudio.startChargeSound();
+            }
+            
+            if (this.player.isCharging) {
+                if (keyAttack) {
+                    this.player.chargeTimer++;
+                    if (this.player.chargeTimer > 60) this.player.chargeTimer = 60;
+                    this.player.vx = 0; // Freeze horizontal movement while charging
+                }
+                
+                if (attackJustReleased || !keyAttack) {
+                    this.finishAttackCharging();
+                }
+            }
+        }
+
+        // Duck (Crouch)
+        this.player.isCrouching = keyDown && this.player.isOnGround && !this.player.isOnLadder && !this.player.isCharging;
+
+        // Regular movements (only if not charging)
+        if (!this.player.isCrouching && !this.player.isCharging) {
             if (keyLeft) {
                 this.player.vx -= 0.7;
                 this.player.direction = -1;
@@ -1170,7 +1815,7 @@ class Game {
         let overlapsLadder = this.ladders.some(l => this.checkCollision(this.player, l));
         
         if (overlapsLadder) {
-            if (keyUp || keyDown) {
+            if ((keyUp || keyDown) && !this.player.isCharging) {
                 this.player.isOnLadder = true;
                 this.player.vx = 0;
             }
@@ -1198,6 +1843,8 @@ class Game {
             this.player.animState = 'hurt';
         } else if (this.player.isAttacking) {
             this.player.animState = 'hit';
+        } else if (this.player.isCharging) {
+            this.player.animState = 'duck'; // crouching stance for bow draw
         } else if (this.player.isOnLadder) {
             this.player.animState = 'walk'; // leg movement
         } else if (!this.player.isOnGround) {
@@ -1220,6 +1867,26 @@ class Game {
     }
 
     applyPhysics() {
+        if (this.player.isDashing) {
+            this.player.vx = this.player.dashDirection * 12.0;
+            this.player.vy = 0;
+            this.player.x += this.player.vx;
+            this.player.y += this.player.vy;
+            
+            // Level boundary clamps
+            if (this.player.x < 0) {
+                this.player.x = 0;
+                this.player.vx = 0;
+                this.player.isDashing = false; // abort dash on wall
+            }
+            if (this.player.x > this.stageWidth - this.player.width) {
+                this.player.x = this.stageWidth - this.player.width;
+                this.player.vx = 0;
+                this.player.isDashing = false; // abort dash on wall
+            }
+            return;
+        }
+
         // Friction on ground
         this.player.vx *= this.friction;
 
@@ -1251,6 +1918,7 @@ class Game {
         // Don't collide with platforms while climbing ladder, unless standing on top of one
         if (this.player.isOnLadder) {
             this.player.jumpCount = 0;
+            this.player.hasDashed = false; // Reset dash on ladder
             return;
         }
 
@@ -1279,9 +1947,11 @@ class Game {
                     if (isMovingRight && wasLeft) {
                         this.player.x = platform.x - this.player.width;
                         this.player.vx = 0;
+                        if (this.player.isDashing) this.player.isDashing = false; // abort dash on wall
                     } else if (isMovingLeft && wasRight) {
                         this.player.x = platform.x + platform.w;
                         this.player.vx = 0;
+                        if (this.player.isDashing) this.player.isDashing = false; // abort dash on wall
                     }
                 }
             }
@@ -1289,6 +1959,7 @@ class Game {
 
         if (this.player.isOnGround) {
             this.player.jumpCount = 0;
+            this.player.hasDashed = false; // Reset dash on landing
         }
     }
 
@@ -1386,18 +2057,27 @@ class Game {
 
             // Damage player or stomp enemy if touched
             if (this.checkCollision(this.player, enemy)) {
-                const isFalling = this.player.vy > 0;
-                const isAbove = (this.player.y + this.player.height - this.player.vy) <= enemy.y + 12; // 12px tolerance
-
-                if (isFalling && isAbove && !this.player.isHurt) {
-                    // Stomp!
+                if (this.player.isDashing) {
+                    // Air dash attack hit!
                     this.damageEnemy(enemy);
-                    // Bounce player upward
-                    this.player.vy = -8.0;
-                    // Reset jump count so player can double jump again after stomping!
+                    this.player.isDashing = false;
+                    this.player.vy = -5.0;
+                    this.player.hasDashed = false;
                     this.player.jumpCount = 1;
-                } else if (!this.player.isHurt && !enemy.isHurt) {
-                    this.damagePlayer(1);
+                } else {
+                    const isFalling = this.player.vy > 0;
+                    const isAbove = (this.player.y + this.player.height - this.player.vy) <= enemy.y + 12; // 12px tolerance
+
+                    if (isFalling && isAbove && !this.player.isHurt) {
+                        // Stomp!
+                        this.damageEnemy(enemy);
+                        // Bounce player upward
+                        this.player.vy = -8.0;
+                        // Reset jump count so player can double jump again after stomping!
+                        this.player.jumpCount = 1;
+                    } else if (!this.player.isHurt && !enemy.isHurt) {
+                        this.damagePlayer(1);
+                    }
                 }
             }
         });
@@ -1407,13 +2087,17 @@ class Game {
 
         // 3. Update goal touch
         if (this.checkCollision(this.player, this.goal)) {
-            const bossAlive = this.stage === 5 && this.enemies.some(e => e.type === 'boss' && e.hp > 0);
+            const bossAlive = (this.stage === 5 || this.stage === 10) && this.enemies.some(e => e.type === 'boss' && e.hp > 0);
             if (bossAlive) {
                 if (this.gameTick % 60 === 0) {
                     this.spawnFloatingText("보스 공룡을 처치해야 해!", this.goal.x - 40, this.goal.y - 20, '#ef476f');
                 }
             } else if (this.player.foodCollected >= this.foodNeeded) {
-                this.triggerStageClear();
+                if (this.stage === 10) {
+                    this.triggerEndingScene();
+                } else {
+                    this.triggerStageClear();
+                }
             } else {
                 // Show floating helper to eat more food
                 if (this.gameTick % 60 === 0) {
@@ -1421,6 +2105,36 @@ class Game {
                 }
             }
         }
+
+        // 3a. Update Arrows
+        this.arrows.forEach(arrow => {
+            arrow.x += arrow.vx;
+            
+            // Check out of bounds
+            if (arrow.x < 0 || arrow.x > this.stageWidth || arrow.y < 0 || arrow.y > this.height) {
+                arrow.dead = true;
+                return;
+            }
+            
+            // Check platform collision
+            this.platforms.forEach(plat => {
+                if (this.checkCollision(arrow, plat)) {
+                    arrow.dead = true;
+                    this.spawnDust(arrow.x, arrow.y);
+                }
+            });
+            
+            if (arrow.dead) return;
+            
+            // Check enemy collision
+            this.enemies.forEach(enemy => {
+                if (enemy.hp > 0 && this.checkCollision(arrow, enemy)) {
+                    this.damageEnemy(enemy);
+                    arrow.dead = true;
+                }
+            });
+        });
+        this.arrows = this.arrows.filter(arrow => !arrow.dead);
 
         // 4. Update Particle effects
         this.particles.forEach(p => {
@@ -1516,6 +2230,11 @@ class Game {
 
     // Core Game Render Loop
     draw() {
+        if (this.currentState === this.states.ENDING) {
+            this.drawEndingScene();
+            return;
+        }
+
         this.ctx.clearRect(0, 0, this.width, this.height);
         
         // If the game has not started and the player is not initialized yet,
@@ -1577,6 +2296,11 @@ class Game {
             }
         });
 
+        // Draw Arrows
+        this.arrows.forEach(arrow => {
+            window.Sprites.drawArrow(this.ctx, arrow.x, arrow.y, arrow.w, arrow.h, arrow.direction);
+        });
+
         // Draw Player Character (Caveman)
         const isFlashed = this.player.isHurt && (Math.floor(this.gameTick / 4) % 2 === 0);
         window.Sprites.drawCaveman(
@@ -1590,6 +2314,19 @@ class Game {
             this.gameTick,
             isFlashed
         );
+
+        // Draw Bow charging bar above player's head
+        if (this.player.isCharging) {
+            const bx = this.player.x;
+            const by = this.player.y - 12;
+            const barW = 34;
+            const barH = 5;
+            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+            this.ctx.fillRect(bx, by, barW, barH);
+            const chargePct = Math.min(1.0, this.player.chargeTimer / 25);
+            this.ctx.fillStyle = chargePct >= 1.0 ? '#ffb703' : '#00bbf9';
+            this.ctx.fillRect(bx, by, barW * chargePct, barH);
+        }
 
         // Draw Club swing trace effect if attacking
         if (this.player.isAttacking && this.player.attackTimer > 4) {
@@ -1741,6 +2478,123 @@ class Game {
                 }
             });
             this.ctx.restore();
+        } else if (this.stage === 6) {
+            // Stage 6 Jungle Canopy (Deep forest gradient)
+            const gradient = this.ctx.createLinearGradient(0, 0, 0, this.height);
+            gradient.addColorStop(0, '#0f2027');
+            gradient.addColorStop(0.5, '#203a43');
+            gradient.addColorStop(1, '#2c5364');
+            this.ctx.fillStyle = gradient;
+            this.ctx.fillRect(0, 0, this.width, this.height);
+
+            // Draw clouds & trees behind camera scroll
+            this.ctx.save();
+            this.ctx.translate(-this.cameraX * 0.3, 0);
+            this.decor.forEach(d => {
+                if (d.type === 'cloud') {
+                    window.Sprites.drawCloud(this.ctx, d.x, d.y, d.w);
+                }
+            });
+            this.ctx.restore();
+
+            // Parallax trees scroll
+            this.ctx.save();
+            this.ctx.translate(-this.cameraX * 0.7, 0);
+            this.decor.forEach(d => {
+                if (d.type === 'tree') {
+                    window.Sprites.drawTree(this.ctx, d.x, 390, 80 + (d.x % 40));
+                }
+            });
+            this.ctx.restore();
+        } else if (this.stage === 7) {
+            // Stage 7 Magma Core (Dark volcanic red gradient)
+            const gradient = this.ctx.createLinearGradient(0, 0, 0, this.height);
+            gradient.addColorStop(0, '#0b0000');
+            gradient.addColorStop(0.6, '#280505');
+            gradient.addColorStop(1, '#4a0505');
+            this.ctx.fillStyle = gradient;
+            this.ctx.fillRect(0, 0, this.width, this.height);
+
+            // Lava river glow at the bottom (pit areas)
+            this.ctx.fillStyle = 'rgba(255, 60, 0, 0.18)';
+            this.ctx.fillRect(0, this.height - 40, this.width, 40);
+
+            // Stalactites and stalagmites (Volcanic)
+            this.ctx.save();
+            this.ctx.translate(-this.cameraX * 0.8, 0);
+            this.decor.forEach(d => {
+                if (d.type === 'cave_top') {
+                    window.Sprites.drawCaveDecor(this.ctx, d.x, 0, d.h, true, true, false);
+                } else if (d.type === 'cave_bot') {
+                    window.Sprites.drawCaveDecor(this.ctx, d.x, 390, d.h, false, true, false);
+                }
+            });
+            this.ctx.restore();
+        } else if (this.stage === 8) {
+            // Stage 8 Cyber Temple (Deep violet to hot magenta gradient)
+            const gradient = this.ctx.createLinearGradient(0, 0, 0, this.height);
+            gradient.addColorStop(0, '#03001e');
+            gradient.addColorStop(0.5, '#7303c0');
+            gradient.addColorStop(1, '#ec38bc');
+            this.ctx.fillStyle = gradient;
+            this.ctx.fillRect(0, 0, this.width, this.height);
+
+            // Cyber grid
+            this.ctx.fillStyle = 'rgba(112, 214, 255, 0.05)';
+            for (let i = 0; i < this.width; i += 40) {
+                this.ctx.fillRect(i - (this.cameraX * 0.2) % 40, 0, 2, this.height);
+            }
+
+            this.ctx.save();
+            this.ctx.translate(-this.cameraX * 0.8, 0);
+            this.decor.forEach(d => {
+                if (d.type === 'cave_top') {
+                    window.Sprites.drawCaveDecor(this.ctx, d.x, 0, d.h, true, false, false, true);
+                } else if (d.type === 'cave_bot') {
+                    window.Sprites.drawCaveDecor(this.ctx, d.x, 390, d.h, false, false, false, true);
+                }
+            });
+            this.ctx.restore();
+        } else if (this.stage === 9) {
+            // Stage 9 Crystal Mine (Teal to emerald crystal gradient)
+            const gradient = this.ctx.createLinearGradient(0, 0, 0, this.height);
+            gradient.addColorStop(0, '#061a1a');
+            gradient.addColorStop(0.6, '#0f3a3a');
+            gradient.addColorStop(1, '#2c7a7a');
+            this.ctx.fillStyle = gradient;
+            this.ctx.fillRect(0, 0, this.width, this.height);
+
+            // Crystals (Ice stalactites)
+            this.ctx.save();
+            this.ctx.translate(-this.cameraX * 0.8, 0);
+            this.decor.forEach(d => {
+                if (d.type === 'cave_top') {
+                    window.Sprites.drawCaveDecor(this.ctx, d.x, 0, d.h, true, false, true);
+                } else if (d.type === 'cave_bot') {
+                    window.Sprites.drawCaveDecor(this.ctx, d.x, 390, d.h, false, false, true);
+                }
+            });
+            this.ctx.restore();
+        } else if (this.stage === 10) {
+            // Stage 10 Final Castle (Crimson blood sky gradient)
+            const gradient = this.ctx.createLinearGradient(0, 0, 0, this.height);
+            gradient.addColorStop(0, '#0d0202');
+            gradient.addColorStop(0.5, '#3a0202');
+            gradient.addColorStop(1, '#780303');
+            this.ctx.fillStyle = gradient;
+            this.ctx.fillRect(0, 0, this.width, this.height);
+
+            // Columns (Castle stalactites)
+            this.ctx.save();
+            this.ctx.translate(-this.cameraX * 0.8, 0);
+            this.decor.forEach(d => {
+                if (d.type === 'cave_top') {
+                    window.Sprites.drawCaveDecor(this.ctx, d.x, 0, d.h, true, false, false, false, true);
+                } else if (d.type === 'cave_bot') {
+                    window.Sprites.drawCaveDecor(this.ctx, d.x, 390, d.h, false, false, false, false, true);
+                }
+            });
+            this.ctx.restore();
         }
     }
 
@@ -1837,6 +2691,86 @@ class Game {
                 this.ctx.moveTo(platform.x, platform.y);
                 this.ctx.lineTo(platform.x + platform.w, platform.y);
                 this.ctx.stroke();
+            } else if (this.stage === 6) {
+                // Jungle Canopy platform (Forest theme with jungle green colors)
+                this.ctx.fillStyle = '#38b000'; // Lime/jungle green top
+                this.ctx.beginPath();
+                this.ctx.roundRect(platform.x, platform.y, platform.w, platform.h, 2);
+                this.ctx.fill();
+
+                this.ctx.fillStyle = '#2b1a0a'; // Deep brown wood/dirt body
+                this.ctx.fillRect(platform.x, platform.y + 5, platform.w, platform.h - 5);
+
+                this.ctx.strokeStyle = '#70e000'; // Light lime highlight
+                this.ctx.lineWidth = 2;
+                this.ctx.beginPath();
+                this.ctx.moveTo(platform.x, platform.y);
+                this.ctx.lineTo(platform.x + platform.w, platform.y);
+                this.ctx.stroke();
+            } else if (this.stage === 7) {
+                // Magma Core platform (Red lava top with volcanic ash body)
+                this.ctx.fillStyle = '#d00000'; // Dark red lava top
+                this.ctx.beginPath();
+                this.ctx.roundRect(platform.x, platform.y, platform.w, platform.h, 2);
+                this.ctx.fill();
+
+                this.ctx.fillStyle = '#1a0f0f'; // Volcanic black body
+                this.ctx.fillRect(platform.x, platform.y + 5, platform.w, platform.h - 5);
+
+                this.ctx.strokeStyle = '#ffb703'; // Bright yellow lava highlights
+                this.ctx.lineWidth = 2;
+                this.ctx.beginPath();
+                this.ctx.moveTo(platform.x, platform.y);
+                this.ctx.lineTo(platform.x + platform.w, platform.y);
+                this.ctx.stroke();
+            } else if (this.stage === 8) {
+                // Cyber Temple platform (Neon cyan border on deep purple body)
+                this.ctx.fillStyle = '#70d6ff'; // Neon cyan top
+                this.ctx.beginPath();
+                this.ctx.roundRect(platform.x, platform.y, platform.w, platform.h, 2);
+                this.ctx.fill();
+
+                this.ctx.fillStyle = '#1d0f30'; // Cyber dark body
+                this.ctx.fillRect(platform.x, platform.y + 5, platform.w, platform.h - 5);
+
+                this.ctx.strokeStyle = '#ff70a6'; // Neon pink highlights
+                this.ctx.lineWidth = 2;
+                this.ctx.beginPath();
+                this.ctx.moveTo(platform.x, platform.y);
+                this.ctx.lineTo(platform.x + platform.w, platform.y);
+                this.ctx.stroke();
+            } else if (this.stage === 9) {
+                // Crystal Mine platform (Amethyst purple crystals)
+                this.ctx.fillStyle = '#e0aaff'; // Light lavender amethyst top
+                this.ctx.beginPath();
+                this.ctx.roundRect(platform.x, platform.y, platform.w, platform.h, 2);
+                this.ctx.fill();
+
+                this.ctx.fillStyle = '#3c096c'; // Deep amethyst purple body
+                this.ctx.fillRect(platform.x, platform.y + 5, platform.w, platform.h - 5);
+
+                this.ctx.strokeStyle = '#ffffff'; // White shiny highlights
+                this.ctx.lineWidth = 2;
+                this.ctx.beginPath();
+                this.ctx.moveTo(platform.x, platform.y);
+                this.ctx.lineTo(platform.x + platform.w, platform.y);
+                this.ctx.stroke();
+            } else if (this.stage === 10) {
+                // Final Castle platform (Crimson/blood stone brick style)
+                this.ctx.fillStyle = '#ef476f'; // Crimson top
+                this.ctx.beginPath();
+                this.ctx.roundRect(platform.x, platform.y, platform.w, platform.h, 2);
+                this.ctx.fill();
+
+                this.ctx.fillStyle = '#222222'; // Dark castle stone body
+                this.ctx.fillRect(platform.x, platform.y + 5, platform.w, platform.h - 5);
+
+                this.ctx.strokeStyle = '#ffd166'; // Gold brick outline highlight
+                this.ctx.lineWidth = 2;
+                this.ctx.beginPath();
+                this.ctx.moveTo(platform.x, platform.y);
+                this.ctx.lineTo(platform.x + platform.w, platform.y);
+                this.ctx.stroke();
             }
 
             this.ctx.restore();
@@ -1870,7 +2804,7 @@ class Game {
         } 
         
         else if (this.goal.type === 'portal') {
-            const bossAlive = this.stage === 5 && this.enemies.some(e => e.type === 'boss' && e.hp > 0);
+            const bossAlive = (this.stage === 5 || this.stage === 10) && this.enemies.some(e => e.type === 'boss' && e.hp > 0);
             if (bossAlive) {
                 // Draw a locked/faded portal
                 const cy = this.goal.y + this.goal.h/2;

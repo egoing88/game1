@@ -604,6 +604,47 @@ const Sprites = {
         ctx.restore();
     },
 
+    // Draw Arrow Projectile
+    drawArrow(ctx, x, y, width, height, direction) {
+        this.setupTransform(ctx, x, y, width, height, direction);
+
+        ctx.strokeStyle = '#8b5a2b'; // Wooden shaft
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.moveTo(-width/2 + 2, 0);
+        ctx.lineTo(width/2 - 4, 0);
+        ctx.stroke();
+
+        // Arrowhead (Stone tip)
+        ctx.fillStyle = '#7a7a7a';
+        ctx.beginPath();
+        ctx.moveTo(width/2 - 4, -4);
+        ctx.lineTo(width/2 + 4, 0);
+        ctx.lineTo(width/2 - 4, 4);
+        ctx.closePath();
+        ctx.fill();
+
+        // Fletching (Feathers at the tail)
+        ctx.fillStyle = '#ff5e36'; // Orange feather
+        ctx.beginPath();
+        ctx.moveTo(-width/2 + 2, 0);
+        ctx.lineTo(-width/2 - 2, -4);
+        ctx.lineTo(-width/2 + 4, -4);
+        ctx.lineTo(-width/2 + 6, 0);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.moveTo(-width/2 + 2, 0);
+        ctx.lineTo(-width/2 - 2, 4);
+        ctx.lineTo(-width/2 + 4, 4);
+        ctx.lineTo(-width/2 + 6, 0);
+        ctx.closePath();
+        ctx.fill();
+
+        this.restoreTransform(ctx);
+    },
+
     // Draw ladder (사다리)
     drawLadder(ctx, x, y, width, height) {
         ctx.save();
@@ -680,7 +721,7 @@ const Sprites = {
     },
 
     // Cave backgrounds (Stalactites / Stalagmites)
-    drawCaveDecor(ctx, x, y, height, isCeiling = true, isVolcanic = false, isIce = false) {
+    drawCaveDecor(ctx, x, y, height, isCeiling = true, isVolcanic = false, isIce = false, isCyber = false, isCastle = false) {
         ctx.save();
         
         let fill = '#231c30';
@@ -692,6 +733,12 @@ const Sprites = {
         } else if (isIce) {
             fill = '#90e0ef';
             stroke = '#ffffff';
+        } else if (isCyber) {
+            fill = '#1d0f30';
+            stroke = '#70d6ff';
+        } else if (isCastle) {
+            fill = '#1e0505';
+            stroke = '#ef476f';
         }
         
         ctx.fillStyle = fill;
