@@ -7,13 +7,14 @@
 // to enable online leaderboard. If left as placeholders,
 // the game will automatically fall back to localStorage.
 const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_PROJECT.firebaseapp.com",
-    databaseURL: "https://YOUR_PROJECT-default-rtdb.firebaseio.com",
-    projectId: "YOUR_PROJECT",
-    storageBucket: "YOUR_PROJECT.appspot.com",
-    messagingSenderId: "000000000000",
-    appId: "YOUR_APP_ID"
+    apiKey: "AIzaSyC1_8xkjvBaF_-SMrAQuvOlTlkbp2feIFc",
+    authDomain: "egoing-da91d.firebaseapp.com",
+    databaseURL: "https://egoing-da91d-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "egoing-da91d",
+    storageBucket: "egoing-da91d.firebasestorage.app",
+    messagingSenderId: "622933587054",
+    appId: "1:622933587054:web:eb497d8cfab9438db8a27f",
+    measurementId: "G-PX17N5DEH5"
 };
 
 let firebaseDB = null;
