@@ -78,6 +78,20 @@ class Game {
     }
 
     bindEvents() {
+        // Prevent screen bounce and scroll gestures on mobile while playing
+        document.body.addEventListener('touchmove', (e) => {
+            if (this.currentState === this.states.PLAYING) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+
+        // Prevent double-tap to zoom on mobile devices
+        document.body.addEventListener('touchstart', (e) => {
+            if (e.touches.length > 1) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+
         // Keyboard controls
         window.addEventListener('keydown', (e) => {
             this.keys[e.code] = true;
