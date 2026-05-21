@@ -33,11 +33,14 @@ body {
     background-color: var(--bg-dark);
     color: var(--text-main);
     font-family: var(--font-sans);
-    overflow: hidden;
-    height: 100vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    min-height: 100vh;
     display: flex;
-    justify-content: center;
+    flex-direction: column;
+    justify-content: flex-start;
     align-items: center;
+    padding: 40px 20px;
 }
 
 /* Game Outer Wrapper */
@@ -1189,5 +1192,261 @@ body {
 
     .leaderboard-table-wrapper {
         max-height: 220px;
+    }
+}
+
+/* ==========================================
+   ABOUT & SEO SECTION STYLES (Desktop Only)
+   ========================================== */
+
+.about-section {
+    width: 100%;
+    max-width: 900px;
+    margin: 40px auto 60px auto;
+    padding: 0 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+    animation: fadeInAbout 1s ease-out;
+}
+
+@keyframes fadeInAbout {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.about-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-glass);
+    border-radius: 16px;
+    padding: 30px;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    box-shadow: var(--shadow-premium);
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.about-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, rgba(255, 94, 54, 0.4), transparent);
+}
+
+.about-card h2, .about-card h3 {
+    font-family: var(--font-display);
+    color: var(--text-main);
+    letter-spacing: 1px;
+    margin-bottom: 12px;
+}
+
+.about-card h2 {
+    font-size: 2rem;
+    background: linear-gradient(135deg, #fff 0%, var(--text-muted) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.about-card h3 {
+    font-size: 1.3rem;
+}
+
+.about-lead {
+    font-size: 1.1rem;
+    line-height: 1.7;
+    color: #dedce6;
+}
+
+.about-lead strong {
+    color: var(--primary);
+    text-shadow: 0 0 10px rgba(255, 94, 54, 0.2);
+}
+
+/* Feature Grid */
+.about-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+}
+
+.feature-card {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    cursor: default;
+}
+
+.feature-card:hover {
+    border-color: rgba(255, 94, 54, 0.25);
+    box-shadow: var(--shadow-premium), 0 0 20px rgba(255, 94, 54, 0.08);
+}
+
+.card-icon {
+    font-size: 2.2rem;
+    margin-bottom: 6px;
+    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
+    transition: transform 0.3s ease;
+    display: inline-block;
+    width: fit-content;
+}
+
+.feature-card:hover .card-icon {
+    transform: scale(1.15) rotate(5deg);
+}
+
+.feature-card p {
+    font-size: 0.9rem;
+    line-height: 1.6;
+    color: var(--text-muted);
+}
+
+/* How to Play Card */
+.guides-card h3 {
+    border-bottom: 1px solid var(--border-glass);
+    padding-bottom: 12px;
+    margin-bottom: 20px;
+}
+
+.guide-controls-info {
+    margin-bottom: 25px;
+}
+
+.control-badge-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.control-badge-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.control-key {
+    background: linear-gradient(180deg, #2b2344 0%, #17112a 100%);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-bottom: 3.5px solid #0f0a1c;
+    border-radius: 8px;
+    color: #fff;
+    font-family: var(--font-sans);
+    font-weight: 700;
+    font-size: 0.9rem;
+    padding: 6px 14px;
+    min-width: 44px;
+    text-align: center;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    text-shadow: 0 1px 1px rgba(0,0,0,0.5);
+    display: inline-block;
+}
+
+.control-desc {
+    font-size: 0.95rem;
+    color: var(--text-main);
+}
+
+.pro-tips {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 12px;
+    padding: 20px;
+    border-left: 4px solid var(--secondary);
+}
+
+.pro-tips h4 {
+    font-family: var(--font-sans);
+    font-weight: 700;
+    color: var(--secondary);
+    margin-bottom: 10px;
+    font-size: 1rem;
+    letter-spacing: 0.5px;
+}
+
+.pro-tips ul {
+    list-style-type: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.pro-tips li {
+    font-size: 0.88rem;
+    line-height: 1.5;
+    color: #dedce6;
+    position: relative;
+    padding-left: 18px;
+}
+
+.pro-tips li::before {
+    content: "•";
+    color: var(--secondary);
+    font-weight: bold;
+    position: absolute;
+    left: 0;
+    top: 0;
+    font-size: 1.1rem;
+}
+
+/* Contact Card & Social links */
+.contact-card {
+    text-align: center;
+    background: linear-gradient(135deg, rgba(25, 18, 46, 0.65) 0%, rgba(35, 23, 71, 0.65) 100%);
+}
+
+.contact-card::before {
+    background: linear-gradient(90deg, transparent, rgba(6, 214, 160, 0.4), transparent);
+}
+
+.contact-card p {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: var(--text-muted);
+    max-width: 600px;
+    margin: 0 auto 20px auto;
+}
+
+.social-links {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+}
+
+.social-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--border-glass);
+    color: #fff;
+    padding: 10px 22px;
+    border-radius: 30px;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.social-btn svg {
+    width: 20px;
+    height: 20px;
+    fill: currentColor;
+}
+
+.social-btn:hover {
+    background: #fff;
+    color: #0f0a1c;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(255,255,255,0.15);
+}
+
+/* Mobile override for about section */
+@media (max-width: 900px) {
+    .about-section {
+        display: none !important;
     }
 }
