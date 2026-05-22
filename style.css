@@ -1681,3 +1681,112 @@ body {
         font-size: 0.65rem !important;
     }
 }
+
+/* ==========================================
+   DIFFICULTY SELECTOR STYLES
+   ========================================== */
+.difficulty-selector-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: center;
+    width: 100%;
+    max-width: 320px;
+    margin: 0 auto 16px auto;
+}
+
+.difficulty-label {
+    font-family: var(--font-display);
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    font-weight: 700;
+}
+
+.difficulty-selector {
+    display: flex;
+    background: rgba(0, 0, 0, 0.35);
+    border: 1.5px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 4px;
+    width: 100%;
+    justify-content: space-between;
+    gap: 4px;
+}
+
+.diff-btn {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text-muted);
+    font-family: var(--font-sans);
+    font-size: 0.8rem;
+    font-weight: 700;
+    padding: 8px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    text-align: center;
+    user-select: none;
+}
+
+.diff-btn:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.diff-btn.active[data-diff="easy"] {
+    background: #06d6a0;
+    color: #121212;
+    box-shadow: 0 4px 12px rgba(6, 214, 160, 0.35);
+}
+
+.diff-btn.active[data-diff="normal"] {
+    background: #ffd166;
+    color: #121212;
+    box-shadow: 0 4px 12px rgba(255, 209, 102, 0.35);
+}
+
+.diff-btn.active[data-diff="hard"] {
+    background: #ff5e36;
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(255, 94, 54, 0.35);
+}
+
+.diff-btn.active[data-diff="hell"] {
+    background: #ef476f;
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(239, 71, 111, 0.4);
+    animation: hellPulse 1s infinite alternate;
+}
+
+@keyframes hellPulse {
+    0% { transform: scale(1); box-shadow: 0 4px 12px rgba(239, 71, 111, 0.4); }
+    100% { transform: scale(1.03); box-shadow: 0 6px 18px rgba(239, 71, 111, 0.7); }
+}
+
+/* Compact layout for low-height landscape screens */
+@media (max-width: 900px) and (max-height: 480px) {
+    .difficulty-selector-container {
+        margin-bottom: 8px !important;
+        gap: 4px !important;
+    }
+    
+    .difficulty-label {
+        font-size: 0.7rem !important;
+    }
+    
+    .difficulty-selector {
+        border-radius: 8px !important;
+        padding: 2px !important;
+    }
+    
+    .diff-btn {
+        font-size: 0.75rem !important;
+        padding: 5px 8px !important;
+        border-radius: 6px !important;
+    }
+}
+

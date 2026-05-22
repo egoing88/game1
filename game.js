@@ -110,6 +110,7 @@ class Game {
         this.soundOn = true;
 
         this.deferredPrompt = null;
+        this.difficulty = 'normal';
 
         this.initDOM();
         this.bindEvents();
@@ -212,6 +213,16 @@ class Game {
                 if (window.innerWidth <= 900) {
                     this.requestFullscreenForGame();
                 }
+                // Force Normal difficulty for Rank Mode
+                this.difficulty = 'normal';
+                const diffBtns = document.querySelectorAll('.diff-btn');
+                diffBtns.forEach(b => {
+                    if (b.getAttribute('data-diff') === 'normal') {
+                        b.classList.add('active');
+                    } else {
+                        b.classList.remove('active');
+                    }
+                });
                 this.isRankMode = true;
                 this.isPerfectRun = true;
                 this.rankPausedTime = 0;
@@ -393,6 +404,17 @@ class Game {
                 this.triggerVictory();
             }
         }, { passive: false });
+
+        // Bind difficulty selection buttons
+        const diffBtns = document.querySelectorAll('.diff-btn');
+        diffBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                if (this.currentState !== this.states.START) return;
+                diffBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                this.difficulty = btn.getAttribute('data-diff') || 'normal';
+            });
+        });
     }
 
     bindMobileButton(elementId, commandName) {
@@ -598,12 +620,34 @@ class Game {
     }
 
     // Damage an enemy
-    damageEnemy(enemy) {
+    damageEnemy(enemy, isStomp = false) {
+        // Ankylosaurus block check
+        if (enemy.type === 'ankyl' && !isStomp) {
+            const playerBehind = (enemy.vx < 0 && this.player.x > enemy.x) || (enemy.vx > 0 && this.player.x < enemy.x);
+            if (!playerBehind) {
+                // Deflected!
+                window.gameAudio.playHit();
+                this.spawnFloatingText("BLOCK", enemy.x, enemy.y - 15, '#a0a0a0');
+                this.spawnStars(enemy.x + enemy.w/2, enemy.y + enemy.h/2, 5); // sparks
+                this.shakeAmount = 2;
+                return; // early return, no damage
+            }
+        }
+
+        enemy.preHurtVx = enemy.isHurt ? (enemy.preHurtVx || enemy.vx) : enemy.vx;
         enemy.hp--;
         enemy.isHurt = true;
         enemy.hurtTimer = 10;
         enemy.vx = this.player.direction * 3; // knockback
         
+        // Stegosaurus enrage behavior when hit
+        if (enemy.type === 'stego' && enemy.hp > 0) {
+            enemy.isEnraged = true;
+            enemy.enrageTimer = 120; // 2 seconds
+            // Set target speed to double the base patrol speed in the same direction
+            enemy.preHurtVx = Math.sign(enemy.preHurtVx) * Math.abs(enemy.baseVx || enemy.preHurtVx) * 2.0;
+        }
+
         window.gameAudio.playHit();
         this.shakeAmount = 6;
         
@@ -685,8 +729,8 @@ class Game {
             attackTimer: 0,
             isHurt: false,
             hurtTimer: 0,
-            hearts: 3,
-            maxHearts: 3,
+            hearts: this.difficulty === 'easy' ? 5 : (this.difficulty === 'hard' ? 2 : (this.difficulty === 'hell' ? 1 : 3)),
+            maxHearts: this.difficulty === 'easy' ? 5 : (this.difficulty === 'hard' ? 2 : (this.difficulty === 'hell' ? 1 : 3)),
             foodCollected: 0,
             jumpCount: 0,
             // New mechanics state
@@ -708,6 +752,8 @@ class Game {
         this.particles = [];
         this.floatingTexts = [];
         this.arrows = [];
+        this.bossProjectiles = [];
+        this.fallingRocks = [];
 
         // Build Level properties
         if (stageNum === 1) {
@@ -872,9 +918,9 @@ class Game {
             // Enemies (Spiders & Pterodactyls in the cave!)
             this.enemies = [
                 // Walkers (dino)
-                { x: 420, y: 350, vx: -1.3, w: 38, h: 36, type: 'dino', hp: 1, startX: 420, range: 150, isHurt: false },
-                { x: 1050, y: 350, vx: -1.3, w: 38, h: 36, type: 'dino', hp: 2, startX: 1050, range: 120, isHurt: false },
-                { x: 2350, y: 350, vx: -1.5, w: 38, h: 36, type: 'dino', hp: 2, startX: 2350, range: 180, isHurt: false },
+                { x: 420, y: 350, vx: -1.3, w: 48, h: 42, type: 'stego', hp: 4, startX: 420, range: 150, isHurt: false },
+                { x: 1050, y: 350, vx: -1.3, w: 52, h: 42, type: 'tricera', hp: 3, startX: 1050, range: 120, isHurt: false },
+                { x: 2350, y: 350, vx: -1.5, w: 46, h: 36, type: 'ankyl', hp: 3, startX: 2350, range: 180, isHurt: false },
 
                 // Spiders (moving up and down)
                 { x: 320, y: 120, vy: 1.0, w: 26, h: 26, type: 'spider', hp: 1, startY: 80, range: 160, dir: 1 },
@@ -964,10 +1010,10 @@ class Game {
             ];
 
             this.enemies = [
-                { x: 350, y: 350, vx: -1.3, w: 38, h: 36, type: 'dino', hp: 1, startX: 350, range: 100, isHurt: false },
-                { x: 800, y: 350, vx: -1.4, w: 38, h: 36, type: 'dino', hp: 2, startX: 800, range: 120, isHurt: false },
-                { x: 1400, y: 350, vx: -1.2, w: 38, h: 36, type: 'dino', hp: 1, startX: 1400, range: 150, isHurt: false },
-                { x: 2200, y: 350, vx: -1.5, w: 38, h: 36, type: 'dino', hp: 2, startX: 2200, range: 120, isHurt: false },
+                { x: 350, y: 350, vx: -1.3, w: 52, h: 42, type: 'tricera', hp: 3, startX: 350, range: 100, isHurt: false },
+                { x: 800, y: 350, vx: -1.4, w: 46, h: 36, type: 'ankyl', hp: 3, startX: 800, range: 120, isHurt: false },
+                { x: 1400, y: 350, vx: -1.2, w: 48, h: 42, type: 'stego', hp: 4, startX: 1400, range: 150, isHurt: false },
+                { x: 2200, y: 350, vx: -1.5, w: 52, h: 42, type: 'tricera', hp: 3, startX: 2200, range: 120, isHurt: false },
                 { x: 500, y: 150, vy: 1.2, w: 26, h: 26, type: 'spider', hp: 1, startY: 100, range: 150, dir: 1 },
                 { x: 1050, y: 180, vy: 1.0, w: 26, h: 26, type: 'spider', hp: 1, startY: 120, range: 140, dir: 1 },
                 { x: 1650, y: 140, vy: 1.5, w: 26, h: 26, type: 'spider', hp: 1, startY: 80, range: 180, dir: 1 },
@@ -1050,8 +1096,8 @@ class Game {
             ];
 
             this.enemies = [
-                { x: 200, y: 350, vx: -1.0, w: 38, h: 36, type: 'dino', hp: 1, startX: 200, range: 80, isHurt: false },
-                { x: 2300, y: 350, vx: -1.2, w: 38, h: 36, type: 'dino', hp: 2, startX: 2300, range: 100, isHurt: false },
+                { x: 200, y: 350, vx: -1.0, w: 46, h: 36, type: 'ankyl', hp: 3, startX: 200, range: 80, isHurt: false },
+                { x: 2300, y: 350, vx: -1.2, w: 48, h: 42, type: 'stego', hp: 4, startX: 2300, range: 100, isHurt: false },
                 { x: 500, y: 220, vy: 1.0, w: 26, h: 26, type: 'spider', hp: 1, startY: 180, range: 100, dir: 1 },
                 { x: 1200, y: 180, vy: 1.2, w: 26, h: 26, type: 'spider', hp: 1, startY: 140, range: 120, dir: 1 },
                 { x: 1600, y: 160, vy: 0.8, w: 26, h: 26, type: 'spider', hp: 1, startY: 120, range: 100, dir: 1 },
@@ -1118,8 +1164,8 @@ class Game {
             this.enemies = [
                 // Final Boss Dino King
                 { x: 1900, y: 300, vx: -1.8, w: 95, h: 90, type: 'boss', hp: 10, startX: 1950, range: 250, isHurt: false },
-                { x: 600, y: 350, vx: -1.2, w: 38, h: 36, type: 'dino', hp: 2, startX: 600, range: 80, isHurt: false },
-                { x: 1050, y: 350, vx: -1.0, w: 38, h: 36, type: 'dino', hp: 1, startX: 1050, range: 100, isHurt: false },
+                { x: 600, y: 350, vx: -1.2, w: 48, h: 42, type: 'stego', hp: 4, startX: 600, range: 80, isHurt: false },
+                { x: 1050, y: 350, vx: -1.0, w: 46, h: 36, type: 'ankyl', hp: 3, startX: 1050, range: 100, isHurt: false },
                 { x: 800, y: 150, vy: 1.0, w: 26, h: 26, type: 'spider', hp: 1, startY: 100, range: 120, dir: 1 },
                 { x: 1200, y: 100, vx: -2.0, w: 36, h: 28, type: 'ptero', hp: 1, startX: 1200, range: 150, isHurt: false }
             ];
@@ -1185,9 +1231,9 @@ class Game {
             ];
 
             this.enemies = [
-                { x: 400, y: 350, vx: -1.2, w: 38, h: 36, type: 'dino', hp: 1, startX: 400, range: 120, isHurt: false },
-                { x: 1100, y: 350, vx: -1.5, w: 38, h: 36, type: 'dino', hp: 2, startX: 1100, range: 150, isHurt: false },
-                { x: 2000, y: 350, vx: -1.2, w: 38, h: 36, type: 'dino', hp: 2, startX: 2000, range: 180, isHurt: false },
+                { x: 400, y: 350, vx: -1.2, w: 52, h: 42, type: 'tricera', hp: 3, startX: 400, range: 120, isHurt: false },
+                { x: 1100, y: 350, vx: -1.5, w: 48, h: 42, type: 'stego', hp: 4, startX: 1100, range: 150, isHurt: false },
+                { x: 2000, y: 350, vx: -1.2, w: 46, h: 36, type: 'ankyl', hp: 3, startX: 2000, range: 180, isHurt: false },
                 { x: 600, y: 150, vy: 1.2, w: 26, h: 26, type: 'spider', hp: 1, startY: 80, range: 150, dir: 1 },
                 { x: 1450, y: 180, vy: 1.0, w: 26, h: 26, type: 'spider', hp: 1, startY: 100, range: 120, dir: 1 },
                 { x: 1600, y: 100, vx: -2.0, w: 36, h: 28, type: 'ptero', hp: 1, startX: 1600, range: 250, isHurt: false }
@@ -1258,10 +1304,10 @@ class Game {
             ];
 
             this.enemies = [
-                { x: 300, y: 350, vx: -1.3, w: 38, h: 36, type: 'dino', hp: 1, startX: 300, range: 80, isHurt: false },
-                { x: 1000, y: 350, vx: -1.2, w: 38, h: 36, type: 'dino', hp: 2, startX: 1000, range: 100, isHurt: false },
-                { x: 1800, y: 350, vx: -1.4, w: 38, h: 36, type: 'dino', hp: 2, startX: 1800, range: 100, isHurt: false },
-                { x: 2500, y: 350, vx: -1.6, w: 38, h: 36, type: 'dino', hp: 3, startX: 2500, range: 120, isHurt: false },
+                { x: 300, y: 350, vx: -1.3, w: 46, h: 36, type: 'ankyl', hp: 3, startX: 300, range: 80, isHurt: false },
+                { x: 1000, y: 350, vx: -1.2, w: 48, h: 42, type: 'stego', hp: 4, startX: 1000, range: 100, isHurt: false },
+                { x: 1800, y: 350, vx: -1.4, w: 52, h: 42, type: 'tricera', hp: 3, startX: 1800, range: 100, isHurt: false },
+                { x: 2500, y: 350, vx: -1.6, w: 46, h: 36, type: 'ankyl', hp: 3, startX: 2500, range: 120, isHurt: false },
                 { x: 750, y: 150, vy: 1.3, w: 26, h: 26, type: 'spider', hp: 1, startY: 80, range: 140, dir: 1 },
                 { x: 1500, y: 120, vy: 1.5, w: 26, h: 26, type: 'spider', hp: 1, startY: 80, range: 180, dir: 1 },
                 { x: 600, y: 100, vx: -2.2, w: 36, h: 28, type: 'ptero', hp: 1, startX: 600, range: 200, isHurt: false },
@@ -1334,10 +1380,10 @@ class Game {
             ];
 
             this.enemies = [
-                { x: 350, y: 350, vx: -1.5, w: 38, h: 36, type: 'dino', hp: 2, startX: 350, range: 100, isHurt: false },
-                { x: 1000, y: 350, vx: -1.3, w: 38, h: 36, type: 'dino', hp: 2, startX: 1000, range: 120, isHurt: false },
-                { x: 1900, y: 350, vx: -1.5, w: 38, h: 36, type: 'dino', hp: 2, startX: 1900, range: 150, isHurt: false },
-                { x: 2400, y: 350, vx: -1.8, w: 38, h: 36, type: 'dino', hp: 3, startX: 2400, range: 100, isHurt: false },
+                { x: 350, y: 350, vx: -1.5, w: 52, h: 42, type: 'tricera', hp: 3, startX: 350, range: 100, isHurt: false },
+                { x: 1000, y: 350, vx: -1.3, w: 46, h: 36, type: 'ankyl', hp: 3, startX: 1000, range: 120, isHurt: false },
+                { x: 1900, y: 350, vx: -1.5, w: 48, h: 42, type: 'stego', hp: 4, startX: 1900, range: 150, isHurt: false },
+                { x: 2400, y: 350, vx: -1.8, w: 52, h: 42, type: 'tricera', hp: 3, startX: 2400, range: 100, isHurt: false },
                 { x: 500, y: 120, vy: 1.5, w: 26, h: 26, type: 'spider', hp: 1, startY: 80, range: 150, dir: 1 },
                 { x: 1350, y: 150, vy: 1.2, w: 26, h: 26, type: 'spider', hp: 1, startY: 90, range: 130, dir: 1 },
                 { x: 600, y: 80, vx: -2.5, w: 36, h: 28, type: 'ptero', hp: 1, startX: 600, range: 250, isHurt: false },
@@ -1408,9 +1454,9 @@ class Game {
             ];
 
             this.enemies = [
-                { x: 350, y: 350, vx: -1.2, w: 38, h: 36, type: 'dino', hp: 2, startX: 350, range: 100, isHurt: false },
-                { x: 1000, y: 350, vx: -1.4, w: 38, h: 36, type: 'dino', hp: 2, startX: 1000, range: 150, isHurt: false },
-                { x: 1800, y: 350, vx: -1.3, w: 38, h: 36, type: 'dino', hp: 3, startX: 1800, range: 120, isHurt: false },
+                { x: 350, y: 350, vx: -1.2, w: 46, h: 36, type: 'ankyl', hp: 3, startX: 350, range: 100, isHurt: false },
+                { x: 1000, y: 350, vx: -1.4, w: 48, h: 42, type: 'stego', hp: 4, startX: 1000, range: 150, isHurt: false },
+                { x: 1800, y: 350, vx: -1.3, w: 52, h: 42, type: 'tricera', hp: 3, startX: 1800, range: 120, isHurt: false },
                 { x: 500, y: 150, vy: 1.1, w: 26, h: 26, type: 'spider', hp: 1, startY: 90, range: 140, dir: 1 },
                 { x: 1350, y: 180, vy: 1.3, w: 26, h: 26, type: 'spider', hp: 1, startY: 100, range: 150, dir: 1 },
                 { x: 600, y: 100, vx: -2.0, w: 36, h: 28, type: 'ptero', hp: 1, startX: 600, range: 200, isHurt: false },
@@ -1465,9 +1511,9 @@ class Game {
             this.hiddenTriggers = [];
 
             this.enemies = [
-                { x: 1700, y: 280, vx: -2.0, w: 110, h: 100, type: 'boss', hp: 15, startX: 1800, range: 450, isHurt: false },
-                { x: 350, y: 350, vx: -1.2, w: 38, h: 36, type: 'dino', hp: 2, startX: 350, range: 80, isHurt: false },
-                { x: 850, y: 350, vx: -1.4, w: 38, h: 36, type: 'dino', hp: 2, startX: 850, range: 100, isHurt: false },
+                { x: 1700, y: 280, vx: -2.0, w: 110, h: 100, type: 'boss', hp: 20, startX: 1800, range: 450, isHurt: false },
+                { x: 350, y: 350, vx: -1.2, w: 48, h: 42, type: 'stego', hp: 4, startX: 350, range: 80, isHurt: false },
+                { x: 850, y: 350, vx: -1.4, w: 52, h: 42, type: 'tricera', hp: 3, startX: 850, range: 100, isHurt: false },
                 { x: 550, y: 100, vy: 1.5, w: 26, h: 26, type: 'spider', hp: 1, startY: 80, range: 140, dir: 1 }
             ];
 
@@ -1486,6 +1532,43 @@ class Game {
 
             this.goal = { x: 2250, y: 310, w: 60, h: 80, type: 'portal' };
         }
+
+        // Scale enemy HP and speed based on difficulty at the end of loadStage
+        const hpMultiplier = this.difficulty === 'easy' ? 0.7 : (this.difficulty === 'hard' ? 1.3 : (this.difficulty === 'hell' ? 2.0 : 1.0));
+        const speedMultiplier = this.difficulty === 'easy' ? 0.7 : (this.difficulty === 'hard' ? 1.2 : (this.difficulty === 'hell' ? 1.4 : 1.0));
+
+        this.enemies.forEach(enemy => {
+            // Set Stage 10 Boss HP base to 20 before scaling
+            if (this.stage === 10 && enemy.type === 'boss') {
+                enemy.hp = 20;
+            }
+
+            // Scale HP
+            enemy.hp = Math.max(1, Math.round(enemy.hp * hpMultiplier));
+            
+            // Store base velocities
+            if (enemy.vx !== undefined) {
+                let scaledVx = enemy.vx * speedMultiplier;
+                // Extra 1.3x speed boost for spider and ptero in Hell
+                if (this.difficulty === 'hell' && (enemy.type === 'spider' || enemy.type === 'ptero')) {
+                    scaledVx *= 1.3;
+                }
+                enemy.vx = scaledVx;
+                enemy.baseVx = scaledVx;
+            }
+            if (enemy.vy !== undefined) {
+                let scaledVy = enemy.vy * speedMultiplier;
+                // Extra 1.3x speed boost for spider and ptero in Hell
+                if (this.difficulty === 'hell' && (enemy.type === 'spider' || enemy.type === 'ptero')) {
+                    scaledVy *= 1.3;
+                }
+                enemy.vy = scaledVy;
+                enemy.baseVy = scaledVy;
+            }
+            
+            // Ensure enrage/charge base velocity variables are setup
+            enemy.preHurtVx = enemy.vx;
+        });
         
         this.updateHUD();
     }
@@ -2126,7 +2209,7 @@ class Game {
 
         // Check Out of Bounds / Pitfall Death
         if (this.player.y > this.height + 50) {
-            this.damagePlayer(3); // Instant death in pits
+            this.damagePlayer(99); // Instant death in pits
         }
     }
 
@@ -2424,15 +2507,136 @@ class Game {
 
             if (enemy.isHurt) {
                 enemy.hurtTimer--;
-                if (enemy.hurtTimer <= 0) enemy.isHurt = false;
+                if (enemy.hurtTimer <= 0) {
+                    enemy.isHurt = false;
+                    enemy.vx = enemy.preHurtVx || enemy.baseVx;
+                }
+            }
+
+            // Stegosaurus enrage timer update
+            if (enemy.type === 'stego' && enemy.isEnraged) {
+                enemy.enrageTimer--;
+                if (enemy.enrageTimer <= 0) {
+                    enemy.isEnraged = false;
+                    const dir = Math.sign(enemy.preHurtVx || enemy.vx || -1);
+                    enemy.vx = dir * Math.abs(enemy.baseVx || 1.2);
+                    enemy.preHurtVx = enemy.vx;
+                }
+            }
+
+            // Triceratops charging behavior
+            if (enemy.type === 'tricera') {
+                if (!enemy.isCharging) {
+                    const yDiff = Math.abs(this.player.y - enemy.y);
+                    const xDiff = this.player.x - enemy.x;
+                    const dist = Math.abs(xDiff);
+                    const enemyFacing = Math.sign(enemy.vx || -1); // 1 = right, -1 = left
+                    const playerInFront = Math.sign(xDiff) === enemyFacing;
+
+                    if (yDiff < 30 && dist < 300 && playerInFront) {
+                        enemy.isCharging = true;
+                        enemy.chargeTimer = 90;
+                        enemy.vx = enemyFacing * Math.abs(enemy.baseVx || 1.5) * 2.5;
+                        enemy.preHurtVx = enemy.vx;
+                    }
+                } else {
+                    enemy.chargeTimer--;
+                    if (enemy.chargeTimer <= 0) {
+                        enemy.isCharging = false;
+                        const dir = Math.sign(enemy.vx || -1);
+                        enemy.vx = dir * Math.abs(enemy.baseVx || 1.5);
+                        enemy.preHurtVx = enemy.vx;
+                    } else {
+                        // Spawn dust trails while charging
+                        if (this.gameTick % 6 === 0) {
+                            this.spawnDust(enemy.x + enemy.w/2, enemy.y + enemy.h - 5);
+                        }
+                    }
+                }
+            }
+
+            // Tyrannosaurus Boss cycles
+            if (enemy.type === 'boss') {
+                if (enemy.bossTick === undefined) enemy.bossTick = 0;
+                enemy.bossTick++;
+
+                // Boss Fireball cycle: 240 frames (4 seconds)
+                const fireCycleFrame = enemy.bossTick % 240;
+                if (fireCycleFrame >= 180 && fireCycleFrame < 220) {
+                    // Stop boss patrol (wind up before firing)
+                    enemy.vx = 0;
+                    enemy.isOpenJaw = true;
+                    
+                    // Fire at frame 210
+                    if (fireCycleFrame === 210) {
+                        const isStage10 = this.stage === 10;
+                        const direction = Math.sign(this.player.x - enemy.x) || -1;
+                        
+                        window.gameAudio.playHit();
+                        
+                        if (isStage10) {
+                            // 3-way spread fireballs
+                            const angles = [-0.2, 0, 0.2];
+                            angles.forEach(angle => {
+                                this.bossProjectiles.push({
+                                    x: enemy.x + (direction > 0 ? enemy.w - 10 : 10),
+                                    y: enemy.y + 35,
+                                    w: 16,
+                                    h: 16,
+                                    vx: direction * 4.5 * Math.cos(angle),
+                                    vy: 4.5 * Math.sin(angle),
+                                    dead: false
+                                });
+                            });
+                        } else {
+                            // Stage 5 single horizontal fireball
+                            this.bossProjectiles.push({
+                                x: enemy.x + (direction > 0 ? enemy.w - 10 : 10),
+                                y: enemy.y + 35,
+                                w: 16,
+                                h: 16,
+                                vx: direction * 5.0,
+                                vy: 0,
+                                dead: false
+                            });
+                        }
+                    }
+                } else if (fireCycleFrame === 220) {
+                    // Resume patrol
+                    enemy.isOpenJaw = false;
+                    const dir = Math.sign(this.player.x - enemy.x) || -1;
+                    enemy.vx = dir * Math.abs(enemy.baseVx || 1.8);
+                    enemy.preHurtVx = enemy.vx;
+                }
+
+                // Stage 10 Boss Stomp cycle: 400 frames (6.67 seconds)
+                if (this.stage === 10) {
+                    const stompCycleFrame = enemy.bossTick % 400;
+                    if (stompCycleFrame === 350) {
+                        this.shakeAmount = 15;
+                        window.gameAudio.playHit();
+                        // Spawn 5 falling rocks from top of screen at random horizontal positions
+                        for (let i = 0; i < 5; i++) {
+                            this.fallingRocks.push({
+                                x: this.cameraX + 50 + Math.random() * (this.width - 100),
+                                y: -20 - Math.random() * 80,
+                                w: 18,
+                                h: 18,
+                                vx: Math.random() * 2 - 1,
+                                vy: 1 + Math.random() * 2,
+                                dead: false
+                            });
+                        }
+                    }
+                }
             }
 
             // AI movement paths
-            if (enemy.type === 'dino' || enemy.type === 'boss') {
+            if (['dino', 'boss', 'stego', 'tricera', 'ankyl'].includes(enemy.type)) {
                 enemy.x += enemy.vx;
                 
-                // Patrol boundaries
-                if (Math.abs(enemy.x - enemy.startX) > enemy.range) {
+                // Patrol boundaries (ignored by charging Triceratops or stopped Boss)
+                if (enemy.vx !== 0 && !enemy.isCharging && Math.abs(enemy.x - enemy.startX) > enemy.range) {
                     enemy.vx = -enemy.vx; // Turn around
                 }
                 
@@ -2479,7 +2683,7 @@ class Game {
 
                     if (isFalling && isAbove && !this.player.isHurt) {
                         // Stomp!
-                        this.damageEnemy(enemy);
+                        this.damageEnemy(enemy, true);
                         // Bounce player upward
                         this.player.vy = -8.0;
                         // Reset jump count so player can double jump again after stomping!
@@ -2544,6 +2748,87 @@ class Game {
             });
         });
         this.arrows = this.arrows.filter(arrow => !arrow.dead);
+
+        // 3b. Update Boss Projectiles (Fireballs)
+        if (this.bossProjectiles) {
+            this.bossProjectiles.forEach(proj => {
+                proj.x += proj.vx;
+                proj.y += proj.vy;
+
+                // Check out of bounds (clean up if off-screen or off stage width)
+                if (proj.x < this.cameraX - 100 || proj.x > this.cameraX + this.width + 100 || proj.y < -100 || proj.y > this.height + 100) {
+                    proj.dead = true;
+                    return;
+                }
+
+                // Check collision with player
+                if (!proj.dead && !this.player.isHurt && this.checkCollision(this.player, proj)) {
+                    this.damagePlayer(1);
+                    proj.dead = true;
+                    // Spawn fire particles on collision
+                    this.spawnStars(proj.x + proj.w/2, proj.y + proj.h/2, 6);
+                }
+
+                // Spawn small trail particles periodically
+                if (this.gameTick % 3 === 0) {
+                    this.particles.push({
+                        x: proj.x + proj.w / 2,
+                        y: proj.y + proj.h / 2,
+                        vx: -proj.vx * 0.2 + (Math.random() * 0.6 - 0.3),
+                        vy: -proj.vy * 0.2 + (Math.random() * 0.6 - 0.3),
+                        color: Math.random() > 0.5 ? '#ff5e36' : '#ffd166',
+                        size: 3 + Math.random() * 3,
+                        life: 15 + Math.random() * 10
+                    });
+                }
+            });
+            this.bossProjectiles = this.bossProjectiles.filter(proj => !proj.dead);
+        }
+
+        // 3c. Update Falling Rocks
+        if (this.fallingRocks) {
+            this.fallingRocks.forEach(rock => {
+                // Apply gravity to rocks
+                rock.vy += 0.25;
+                rock.x += rock.vx;
+                rock.y += rock.vy;
+
+                // Check out of bounds
+                if (rock.y > this.height + 50) {
+                    rock.dead = true;
+                    return;
+                }
+
+                // Check collision with platforms
+                this.platforms.forEach(plat => {
+                    if (!rock.dead && this.checkCollision(rock, plat)) {
+                        rock.dead = true;
+                        // Spawn dust and small debris particles
+                        this.spawnDust(rock.x + rock.w / 2, plat.y);
+                        // Extra rocky sparks
+                        for (let i = 0; i < 4; i++) {
+                            this.particles.push({
+                                x: rock.x + rock.w / 2,
+                                y: plat.y - 2,
+                                vx: Math.random() * 4 - 2,
+                                vy: -Math.random() * 3 - 1,
+                                color: '#7a7a7a',
+                                size: 2 + Math.random() * 3,
+                                life: 10 + Math.random() * 10
+                            });
+                        }
+                    }
+                });
+
+                // Check collision with player
+                if (!rock.dead && !this.player.isHurt && this.checkCollision(this.player, rock)) {
+                    this.damagePlayer(1);
+                    rock.dead = true;
+                    this.spawnStars(rock.x + rock.w/2, rock.y + rock.h/2, 6);
+                }
+            });
+            this.fallingRocks = this.fallingRocks.filter(rock => !rock.dead);
+        }
 
         // 4. Update Particle effects
         this.particles.forEach(p => {
@@ -2701,14 +2986,96 @@ class Game {
         // Draw Enemies
         this.enemies.forEach(enemy => {
             if (enemy.hp <= 0) return;
-            if (enemy.type === 'dino' || enemy.type === 'boss') {
-                window.Sprites.drawDinosaur(this.ctx, enemy.x, enemy.y, enemy.w, enemy.h, this.gameTick, enemy.isHurt);
+            let facing = -1;
+            if (enemy.vx !== 0) {
+                enemy.facing = Math.sign(enemy.vx);
+            }
+            facing = enemy.facing || -1;
+
+            if (enemy.type === 'dino') {
+                window.Sprites.drawDinosaur(this.ctx, enemy.x, enemy.y, enemy.w, enemy.h, this.gameTick, enemy.isHurt, facing);
+            } else if (enemy.type === 'stego') {
+                window.Sprites.drawStegosaurus(this.ctx, enemy.x, enemy.y, enemy.w, enemy.h, this.gameTick, enemy.isHurt, enemy.isEnraged, facing);
+            } else if (enemy.type === 'tricera') {
+                window.Sprites.drawTriceratops(this.ctx, enemy.x, enemy.y, enemy.w, enemy.h, this.gameTick, enemy.isHurt, enemy.isCharging, facing);
+            } else if (enemy.type === 'ankyl') {
+                window.Sprites.drawAnkylosaurus(this.ctx, enemy.x, enemy.y, enemy.w, enemy.h, this.gameTick, enemy.isHurt, facing);
+            } else if (enemy.type === 'boss') {
+                window.Sprites.drawTyrannosaurus(this.ctx, enemy.x, enemy.y, enemy.w, enemy.h, this.gameTick, enemy.isHurt, enemy.isOpenJaw, facing);
             } else if (enemy.type === 'ptero') {
-                window.Sprites.drawPterodactyl(this.ctx, enemy.x, enemy.y, enemy.w, enemy.h, this.gameTick);
+                window.Sprites.drawPterodactyl(this.ctx, enemy.x, enemy.y, enemy.w, enemy.h, this.gameTick, facing);
             } else if (enemy.type === 'spider') {
                 window.Sprites.drawSpider(this.ctx, enemy.x, enemy.y, enemy.w, enemy.h, this.gameTick);
             }
         });
+
+        // Draw Boss Projectiles (Fireballs)
+        if (this.bossProjectiles) {
+            this.bossProjectiles.forEach(proj => {
+                this.ctx.save();
+                this.ctx.translate(proj.x + proj.w/2, proj.y + proj.h/2);
+                
+                // Draw a beautiful fire ball (red outer, yellow inner with glow)
+                this.ctx.shadowColor = '#ff5e36';
+                this.ctx.shadowBlur = 10;
+                
+                // Outer circle
+                const grad = this.ctx.createRadialGradient(0, 0, 1, 0, 0, proj.w/2);
+                grad.addColorStop(0, '#ffd166'); // yellow center
+                grad.addColorStop(0.3, '#ff7b00'); // orange mid
+                grad.addColorStop(1, '#ff0000'); // red edge
+                
+                this.ctx.fillStyle = grad;
+                this.ctx.beginPath();
+                this.ctx.arc(0, 0, proj.w/2, 0, Math.PI * 2);
+                this.ctx.fill();
+                
+                this.ctx.restore();
+            });
+        }
+
+        // Draw Falling Rocks
+        if (this.fallingRocks) {
+            this.fallingRocks.forEach(rock => {
+                this.ctx.save();
+                this.ctx.translate(rock.x + rock.w/2, rock.y + rock.h/2);
+                
+                // Draw jagged/irregular octagon grey rock
+                this.ctx.fillStyle = '#7a7a7a';
+                this.ctx.strokeStyle = '#3a3a3a';
+                this.ctx.lineWidth = 1.5;
+                
+                this.ctx.beginPath();
+                const steps = 8;
+                const r = rock.w / 2;
+                for (let i = 0; i < steps; i++) {
+                    const angle = (i / steps) * Math.PI * 2;
+                    // irregular radius
+                    const irregularR = r * (0.85 + Math.sin(i * 3 + rock.x) * 0.15);
+                    const rx = irregularR * Math.cos(angle);
+                    const ry = irregularR * Math.sin(angle);
+                    if (i === 0) {
+                        this.ctx.moveTo(rx, ry);
+                    } else {
+                        this.ctx.lineTo(rx, ry);
+                    }
+                }
+                this.ctx.closePath();
+                this.ctx.fill();
+                this.ctx.stroke();
+                
+                // Inner crack details
+                this.ctx.strokeStyle = '#555';
+                this.ctx.lineWidth = 1;
+                this.ctx.beginPath();
+                this.ctx.moveTo(-r * 0.4, -r * 0.4);
+                this.ctx.lineTo(0, 0);
+                this.ctx.lineTo(r * 0.3, r * 0.5);
+                this.ctx.stroke();
+                
+                this.ctx.restore();
+            });
+        }
 
         // Draw Arrows
         this.arrows.forEach(arrow => {

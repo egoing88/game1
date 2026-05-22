@@ -50,7 +50,7 @@ const Sprites = {
         ctx.restore();
     },
 
-    // Draw the main character: Caveman (고인돌 원시인)
+    // Draw the main character: Caveman (고인돌 원시인) - Upgraded to Option 1: Wild Shaman
     drawCaveman(ctx, x, y, width, height, state, direction, tick, isFlashed = false) {
         this.setupTransform(ctx, x, y, width, height, direction);
 
@@ -62,37 +62,65 @@ const Sprites = {
             ctx.shadowBlur = 0;
         }
 
-        // Draw wild hair behind (brown, spiky)
-        ctx.fillStyle = '#50301a';
+        // Gradients for body/skin shading (Premium Look)
+        let skinGrad = ctx.createLinearGradient(-15, -15, 15, 15);
+        skinGrad.addColorStop(0, '#ffbf9e'); // Light skin glow
+        skinGrad.addColorStop(0.5, '#ffa47a'); // Base flesh skin
+        skinGrad.addColorStop(1, '#d97b52'); // Shadow skin
+
+        // Draw wild hair behind (Option 1: Wild Shaman spiky hair)
+        let hairGrad = ctx.createLinearGradient(-15, -28, 22, 10);
+        hairGrad.addColorStop(0, '#2d1f18'); // highlights/top
+        hairGrad.addColorStop(0.5, '#1e1410'); // body
+        hairGrad.addColorStop(1, '#0c0705'); // shadow
+        ctx.fillStyle = hairGrad;
+        
         ctx.beginPath();
+        // Draw complex spiky polygon for hair behind
         ctx.moveTo(-15, -15);
-        ctx.lineTo(-5, -28);
-        ctx.lineTo(8, -25);
+        ctx.lineTo(-8, -25);
+        ctx.lineTo(-4, -20);
+        ctx.lineTo(4, -28);
+        ctx.lineTo(8, -22);
+        ctx.lineTo(15, -24);
         ctx.lineTo(18, -12);
-        ctx.lineTo(22, 10);
-        ctx.lineTo(5, 5);
+        ctx.lineTo(24, 2);
+        ctx.lineTo(20, 12);
+        ctx.lineTo(12, 6);
+        ctx.lineTo(5, 8);
         ctx.lineTo(-10, 8);
         ctx.closePath();
         ctx.fill();
 
-        // Caveman body / clothes (Leopard print tunic: orange/yellow with dark dots)
-        ctx.fillStyle = '#ff9f1c';
+        // Stroke hair for separation
+        ctx.strokeStyle = '#050302';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        // Caveman body / clothes (Tunic: Orange Tiger-skin tunic with gradient and stripes)
+        let tunicGrad = ctx.createLinearGradient(-16, -6, 16, 22);
+        tunicGrad.addColorStop(0, '#ffb703'); // bright orange-yellow
+        tunicGrad.addColorStop(1, '#fb8500'); // deep orange
+        ctx.fillStyle = tunicGrad;
         ctx.beginPath();
         ctx.ellipse(0, 8, 16, 14, 0, 0, Math.PI * 2);
         ctx.fill();
         
-        // Leopard spots
-        ctx.fillStyle = '#5e3e18';
+        // Tiger stripes: dark brown/black angled wedges along the sides of the tunic
+        ctx.fillStyle = '#1e140a';
         ctx.beginPath();
-        ctx.arc(-8, 6, 2.5, 0, Math.PI * 2);
-        ctx.arc(4, 12, 2, 0, Math.PI * 2);
-        ctx.arc(6, 4, 3, 0, Math.PI * 2);
-        ctx.arc(-3, 10, 2, 0, Math.PI * 2);
+        // Left stripes
+        ctx.moveTo(-16, 2); ctx.lineTo(-8, 5); ctx.lineTo(-15, 8); ctx.closePath();
+        ctx.moveTo(-15, 10); ctx.lineTo(-6, 11); ctx.lineTo(-13, 13); ctx.closePath();
+        // Right stripes
+        ctx.moveTo(16, 2); ctx.lineTo(8, 5); ctx.lineTo(15, 8); ctx.closePath();
+        ctx.moveTo(15, 10); ctx.lineTo(6, 11); ctx.lineTo(13, 13); ctx.closePath();
+        // Center-bottom stripe
+        ctx.moveTo(-4, 20); ctx.lineTo(0, 12); ctx.lineTo(4, 20); ctx.closePath();
         ctx.fill();
 
         // Flesh skin color
-        const skinColor = '#ffa47a';
-        ctx.fillStyle = skinColor;
+        ctx.fillStyle = skinGrad;
 
         // Legs animation based on state
         let legOffsetLeft = 0;
@@ -113,23 +141,25 @@ const Sprites = {
         ctx.strokeStyle = '#331d10';
         ctx.lineWidth = 4.5;
         ctx.lineCap = 'round';
+        
         // Left Leg
-        ctx.fillStyle = skinColor;
+        ctx.fillStyle = skinGrad;
         ctx.beginPath();
         ctx.arc(-7 + legOffsetLeft, 19, 4, 0, Math.PI * 2);
         ctx.fill();
         ctx.stroke();
+        
         // Right Leg
         ctx.beginPath();
         ctx.arc(7 + legOffsetRight, 19, 4, 0, Math.PI * 2);
         ctx.fill();
         ctx.stroke();
 
-        // Draw Head (large, funny round head)
+        // Draw Head (large, funny round head with gradient shading)
         let headY = -12;
         if (state === 'duck') headY = -5; // Lower head when crouching
         
-        ctx.fillStyle = skinColor;
+        ctx.fillStyle = skinGrad;
         ctx.beginPath();
         ctx.arc(0, headY, 13, 0, Math.PI * 2);
         ctx.fill();
@@ -144,8 +174,11 @@ const Sprites = {
         ctx.arc(4, headY + 5, 8, 0, Math.PI);
         ctx.fill();
 
-        // Nose (big bulbous nose)
-        ctx.fillStyle = '#ff8a5c';
+        // Nose (big bulbous nose with gradient highlight)
+        let noseGrad = ctx.createLinearGradient(5, headY - 4, 14, headY + 5);
+        noseGrad.addColorStop(0, '#ffbe9e');
+        noseGrad.addColorStop(1, '#cc5d33');
+        ctx.fillStyle = noseGrad;
         ctx.beginPath();
         ctx.arc(9, headY + 1, 4.5, 0, Math.PI * 2);
         ctx.fill();
@@ -163,32 +196,74 @@ const Sprites = {
         ctx.arc(5.5, headY - 3, 1.2, 0, Math.PI * 2);
         ctx.fill();
 
-        // Funny wild hair overlay on front
-        ctx.fillStyle = '#50301a';
+        // Blue stone chest necklace
+        ctx.strokeStyle = '#2a1a08';
+        ctx.lineWidth = 1.5;
         ctx.beginPath();
-        ctx.moveTo(-13, headY - 8);
-        ctx.lineTo(-2, headY - 17);
-        ctx.lineTo(8, headY - 14);
-        ctx.lineTo(3, headY - 8);
-        ctx.lineTo(-4, headY - 6);
-        ctx.closePath();
+        ctx.arc(0, headY + 9, 8, 0.1 * Math.PI, 0.9 * Math.PI);
+        ctx.stroke();
+        // Blue stones
+        ctx.fillStyle = '#00b4d8'; // cyan/blue stone
+        ctx.beginPath();
+        ctx.arc(-4, headY + 16, 2, 0, Math.PI*2);
+        ctx.arc(0, headY + 17.5, 2.5, 0, Math.PI*2);
+        ctx.arc(4, headY + 16, 2, 0, Math.PI*2);
+        ctx.fill();
+        ctx.fillStyle = '#90e0ef'; // highlight on central stone
+        ctx.beginPath();
+        ctx.arc(0.5, headY + 17.0, 0.8, 0, Math.PI*2);
         ctx.fill();
 
-        // Bone decoration in hair
-        ctx.fillStyle = '#ffffff';
+        // Option 1: Wild Shaman spiky front hair overlay
+        let frontHairGrad = ctx.createLinearGradient(-13, headY - 17, 8, headY - 6);
+        frontHairGrad.addColorStop(0, '#3d2b20');
+        frontHairGrad.addColorStop(1, '#150d0a');
+        ctx.fillStyle = frontHairGrad;
+        ctx.strokeStyle = '#050302';
+        ctx.lineWidth = 1.5;
         ctx.beginPath();
-        ctx.ellipse(-5, headY - 14, 8, 3, Math.PI/6, 0, Math.PI*2);
+        ctx.moveTo(-13, headY - 8);
+        ctx.lineTo(-9, headY - 15);
+        ctx.lineTo(-5, headY - 11);
+        ctx.lineTo(-1, headY - 19);
+        ctx.lineTo(4, headY - 12);
+        ctx.lineTo(8, headY - 14);
+        ctx.lineTo(6, headY - 8);
+        ctx.lineTo(1, headY - 6);
+        ctx.lineTo(-5, headY - 5);
+        ctx.closePath();
         ctx.fill();
-        ctx.strokeStyle = '#331d10';
+        ctx.stroke();
+
+        // Spiky highlights in hair
+        ctx.strokeStyle = '#6d4c3a';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(-11, headY - 11); ctx.lineTo(-9, headY - 14);
+        ctx.moveTo(-3, headY - 13); ctx.lineTo(-1, headY - 17);
+        ctx.moveTo(5, headY - 10); ctx.lineTo(7, headY - 13);
+        ctx.stroke();
+
+        // Bone decoration in hair (larger, detailed)
+        let boneGrad = ctx.createLinearGradient(-15, headY - 16, 5, headY - 7);
+        boneGrad.addColorStop(0, '#ffffff');
+        boneGrad.addColorStop(1, '#e0e0d8');
+        ctx.fillStyle = boneGrad;
+        ctx.beginPath();
+        ctx.ellipse(-5, headY - 14, 10, 4, Math.PI/6, 0, Math.PI*2);
+        ctx.fill();
+        ctx.strokeStyle = '#2a221d';
         ctx.lineWidth = 1.5;
         ctx.stroke();
         // Bone knobs
+        ctx.fillStyle = '#f5f5f0';
         ctx.beginPath();
-        ctx.arc(-11, headY - 16, 2.5, 0, Math.PI * 2);
-        ctx.arc(-12, headY - 12, 2.5, 0, Math.PI * 2);
-        ctx.arc(2, headY - 11, 2.5, 0, Math.PI * 2);
-        ctx.arc(1, headY - 7, 2.5, 0, Math.PI * 2);
+        ctx.arc(-13, headY - 17, 3.5, 0, Math.PI * 2);
+        ctx.arc(-14, headY - 12, 3.5, 0, Math.PI * 2);
+        ctx.arc(3, headY - 10, 3.5, 0, Math.PI * 2);
+        ctx.arc(1, headY - 6, 3.5, 0, Math.PI * 2);
         ctx.fill();
+        ctx.stroke();
 
         // Draw arms / club
         let armAngle = 0.5; // Default hanging arm
@@ -217,38 +292,92 @@ const Sprites = {
             clubY = 8;
         }
 
-        // Draw wooden club (크고 우락부락한 돌/나무 몽둥이)
+        // Draw bulky wood-grained club (Option 1: Wild Shaman design)
         ctx.save();
         ctx.translate(clubX, clubY);
         ctx.rotate(clubRotation);
         
-        // Club texture
-        ctx.fillStyle = '#9b724c'; // Light brown
+        // Club gradient (textured dark wood)
+        let clubGrad = ctx.createLinearGradient(-6, -24, 6, 0);
+        clubGrad.addColorStop(0, '#5c4033'); // dark brown
+        clubGrad.addColorStop(0.5, '#7c5c43'); // medium wood brown
+        clubGrad.addColorStop(1, '#3d251d'); // shadow brown
+        
+        ctx.fillStyle = clubGrad;
         ctx.beginPath();
         ctx.moveTo(0, 0);
         ctx.lineTo(-4, -4);
-        ctx.lineTo(-6, -20);
-        ctx.ellipse(0, -22, 9, 7, 0, 0, Math.PI * 2); // Thicker top
-        ctx.lineTo(4, -4);
+        ctx.lineTo(-8, -18);
+        ctx.ellipse(0, -22, 11, 9, 0, 0, Math.PI * 2); // Thicker top
+        ctx.lineTo(6, -4);
         ctx.closePath();
         ctx.fill();
-        ctx.strokeStyle = '#331d10';
-        ctx.lineWidth = 2.5;
+        
+        // Wood grain details
+        ctx.strokeStyle = '#281710';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(-1, -6); ctx.lineTo(-2, -18);
+        ctx.moveTo(2, -8); ctx.lineTo(3, -16);
+        ctx.moveTo(-4, -22); ctx.quadraticCurveTo(0, -25, 4, -21);
         ctx.stroke();
 
-        // Club nails/spikes (Retro spikes)
-        ctx.fillStyle = '#e5e5e5';
+        // Redraw outline
+        ctx.strokeStyle = '#331d10';
+        ctx.lineWidth = 2.5;
         ctx.beginPath();
-        ctx.moveTo(5, -24); ctx.lineTo(10, -26); ctx.lineTo(6, -21);
-        ctx.moveTo(-5, -23); ctx.lineTo(-10, -21); ctx.lineTo(-6, -20);
+        ctx.moveTo(0, 0);
+        ctx.lineTo(-4, -4);
+        ctx.lineTo(-8, -18);
+        ctx.ellipse(0, -22, 11, 9, 0, 0, Math.PI * 2);
+        ctx.lineTo(6, -4);
         ctx.closePath();
-        ctx.fill();
         ctx.stroke();
+
+        // Leather straps wrapped around the club
+        ctx.strokeStyle = '#b5835a'; // light leather brown
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.moveTo(-5, -8); ctx.lineTo(4, -12);
+        ctx.moveTo(-6, -13); ctx.lineTo(5, -17);
+        ctx.stroke();
+
+        // Spiky raw grey stones (Option 1 stone spikes)
+        let stoneGrad = ctx.createLinearGradient(-10, -26, 10, -20);
+        stoneGrad.addColorStop(0, '#a0a0a0');
+        stoneGrad.addColorStop(1, '#505050');
+        ctx.fillStyle = stoneGrad;
+        ctx.strokeStyle = '#222222';
+        ctx.lineWidth = 1.5;
+
+        // Left spike
+        ctx.beginPath();
+        ctx.moveTo(-7, -22);
+        ctx.lineTo(-14, -20);
+        ctx.lineTo(-6, -17);
+        ctx.closePath();
+        ctx.fill(); ctx.stroke();
+
+        // Right spike
+        ctx.beginPath();
+        ctx.moveTo(7, -22);
+        ctx.lineTo(14, -24);
+        ctx.lineTo(6, -17);
+        ctx.closePath();
+        ctx.fill(); ctx.stroke();
+
+        // Top spike
+        ctx.beginPath();
+        ctx.moveTo(-3, -29);
+        ctx.lineTo(0, -35);
+        ctx.lineTo(3, -29);
+        ctx.closePath();
+        ctx.fill(); ctx.stroke();
 
         ctx.restore();
 
-        // Draw arm holding the club
-        ctx.fillStyle = skinColor;
+        // Draw arm holding the club (with skin gradient)
+        ctx.fillStyle = skinGrad;
         ctx.strokeStyle = '#331d10';
         ctx.lineWidth = 3;
         ctx.beginPath();
@@ -281,8 +410,8 @@ const Sprites = {
     },
 
     // Dino Enemy (초록 아기 공룡)
-    drawDinosaur(ctx, x, y, width, height, tick, isDamaged = false) {
-        this.setupTransform(ctx, x, y, width, height, -1); // Face left by default
+    drawDinosaur(ctx, x, y, width, height, tick, isDamaged = false, direction = -1) {
+        this.setupTransform(ctx, x, y, width, height, direction); // Face left by default
 
         if (isDamaged) {
             ctx.shadowColor = 'red';
@@ -377,9 +506,522 @@ const Sprites = {
         this.restoreTransform(ctx);
     },
 
+    // Stegosaurus (보라빛 판 공룡 - 피격 시 광폭화)
+    drawStegosaurus(ctx, x, y, width, height, tick, isDamaged = false, isEnraged = false, direction = -1) {
+        this.setupTransform(ctx, x, y, width, height, direction); // Faces left by default
+
+        if (isDamaged) {
+            ctx.shadowColor = 'red';
+            ctx.shadowBlur = 10;
+        } else if (isEnraged) {
+            ctx.shadowColor = '#ef476f';
+            ctx.shadowBlur = 8;
+        }
+
+        ctx.scale(width / 48, height / 42);
+
+        const bodyColor = isEnraged ? '#7b1fa2' : '#4a266a';
+        const plateColor = isEnraged ? '#ff0000' : '#e63946';
+        const bellyColor = isEnraged ? '#b800c8' : '#723d9c';
+        const strokeColor = '#1d0f2b';
+
+        // Legs animation
+        const legSwing = Math.sin(tick * 0.22) * 6;
+
+        ctx.strokeStyle = strokeColor;
+        ctx.lineWidth = 2.5;
+
+        // Back Legs
+        ctx.fillStyle = bellyColor;
+        ctx.beginPath();
+        ctx.roundRect(-10 - legSwing, 15, 7, 10, 3);
+        ctx.fill(); ctx.stroke();
+        ctx.beginPath();
+        ctx.roundRect(8 - legSwing, 15, 7, 10, 3);
+        ctx.fill(); ctx.stroke();
+
+        // Spikes on tail
+        ctx.fillStyle = '#d1d1d1';
+        ctx.beginPath();
+        ctx.moveTo(-28, 4); ctx.lineTo(-35, 1); ctx.lineTo(-28, -2);
+        ctx.moveTo(-24, 7); ctx.lineTo(-32, 9); ctx.lineTo(-26, 3);
+        ctx.closePath();
+        ctx.fill(); ctx.stroke();
+
+        // Tail
+        ctx.fillStyle = bodyColor;
+        ctx.beginPath();
+        ctx.moveTo(-12, 5);
+        ctx.quadraticCurveTo(-26, 6, -28, 2);
+        ctx.quadraticCurveTo(-22, -3, -10, -3);
+        ctx.closePath();
+        ctx.fill(); ctx.stroke();
+
+        // Back plates (Red triangles)
+        ctx.fillStyle = plateColor;
+        const platePositions = [
+            {x: -12, y: -8, size: 7},
+            {x: -6, y: -12, size: 9},
+            {x: 2, y: -13, size: 9},
+            {x: 10, y: -10, size: 8},
+            {x: 15, y: -6, size: 6}
+        ];
+        platePositions.forEach(p => {
+            ctx.beginPath();
+            ctx.moveTo(p.x - p.size/2, p.y);
+            ctx.lineTo(p.x, p.y - p.size);
+            ctx.lineTo(p.x + p.size/2, p.y);
+            ctx.closePath();
+            ctx.fill(); ctx.stroke();
+        });
+
+        // Main Body (Round, heavy)
+        ctx.fillStyle = bodyColor;
+        ctx.beginPath();
+        ctx.ellipse(0, 4, 17, 13, 0, 0, Math.PI * 2);
+        ctx.fill(); ctx.stroke();
+
+        // Head (Small stegosaurus head)
+        ctx.fillStyle = bodyColor;
+        ctx.beginPath();
+        ctx.roundRect(14, -6, 11, 8, [4, 4, 2, 4]);
+        ctx.fill(); ctx.stroke();
+
+        // Eye
+        ctx.fillStyle = isEnraged ? '#ff0000' : '#ffffff';
+        ctx.beginPath();
+        ctx.arc(20, -3, 2, 0, Math.PI * 2);
+        ctx.fill();
+        if (isEnraged) {
+            ctx.fillStyle = '#ffd166';
+            ctx.beginPath();
+            ctx.arc(20, -3, 0.7, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Front Legs
+        ctx.fillStyle = bodyColor;
+        ctx.beginPath();
+        ctx.roundRect(-6 + legSwing, 15, 7, 10, 3);
+        ctx.fill(); ctx.stroke();
+        ctx.beginPath();
+        ctx.roundRect(12 + legSwing, 15, 7, 10, 3);
+        ctx.fill(); ctx.stroke();
+
+        this.restoreTransform(ctx);
+    },
+
+    // Triceratops (뿔 세개 달린 돌진 공룡)
+    drawTriceratops(ctx, x, y, width, height, tick, isDamaged = false, isCharging = false, direction = -1) {
+        this.setupTransform(ctx, x, y, width, height, direction);
+
+        if (isDamaged) {
+            ctx.shadowColor = 'red';
+            ctx.shadowBlur = 10;
+        } else if (isCharging) {
+            ctx.shadowColor = '#ffd166';
+            ctx.shadowBlur = 8;
+        }
+
+        ctx.scale(width / 52, height / 42);
+
+        const bodyColor = '#1d3557'; // Deep blue/teal
+        const frillColor = '#457b9d'; // Lighter blue/grey frill
+        const frillEdgeColor = '#e63946'; // Red ridges on frill
+        const hornColor = '#f1faee';
+        const strokeColor = '#0b131f';
+
+        // Legs swing
+        const legSwing = Math.sin(tick * (isCharging ? 0.4 : 0.2)) * 6;
+
+        ctx.strokeStyle = strokeColor;
+        ctx.lineWidth = 2.5;
+
+        // Back legs
+        ctx.fillStyle = '#112233';
+        ctx.beginPath();
+        ctx.roundRect(-10 - legSwing, 15, 8, 10, 3);
+        ctx.fill(); ctx.stroke();
+        ctx.beginPath();
+        ctx.roundRect(10 - legSwing, 15, 8, 10, 3);
+        ctx.fill(); ctx.stroke();
+
+        // Tail
+        ctx.fillStyle = bodyColor;
+        ctx.beginPath();
+        ctx.moveTo(-15, 4);
+        ctx.quadraticCurveTo(-26, 8, -28, 3);
+        ctx.quadraticCurveTo(-22, -1, -12, -2);
+        ctx.closePath();
+        ctx.fill(); ctx.stroke();
+
+        // Body
+        ctx.fillStyle = bodyColor;
+        ctx.beginPath();
+        ctx.ellipse(0, 5, 18, 13, 0, 0, Math.PI * 2);
+        ctx.fill(); ctx.stroke();
+
+        // Large Neck Frill (Huge shield shape behind head)
+        ctx.fillStyle = frillColor;
+        ctx.beginPath();
+        ctx.arc(10, -5, 12, -Math.PI * 0.8, Math.PI * 0.2);
+        ctx.lineTo(8, 2);
+        ctx.closePath();
+        ctx.fill(); ctx.stroke();
+
+        // Spikes/ridges on frill edge
+        ctx.fillStyle = frillEdgeColor;
+        for (let a = -Math.PI * 0.8; a < Math.PI * 0.2; a += 0.4) {
+            const fx = 10 + Math.cos(a) * 12;
+            const fy = -5 + Math.sin(a) * 12;
+            ctx.beginPath();
+            ctx.arc(fx, fy, 2, 0, Math.PI*2);
+            ctx.fill(); ctx.stroke();
+        }
+
+        // Head
+        ctx.fillStyle = bodyColor;
+        ctx.beginPath();
+        ctx.roundRect(12, -2, 12, 12, [2, 6, 2, 2]);
+        ctx.fill(); ctx.stroke();
+
+        // Charging eye
+        ctx.fillStyle = isCharging ? '#ffb703' : '#ffffff';
+        ctx.beginPath();
+        ctx.arc(16, 2, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#000000';
+        ctx.beginPath();
+        ctx.arc(16.5, 2, 1, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Three Horns (White pointy)
+        ctx.fillStyle = hornColor;
+        // Two long brow horns
+        ctx.beginPath();
+        ctx.moveTo(15, -2); ctx.lineTo(24, -8); ctx.lineTo(17, 0); ctx.closePath();
+        ctx.fill(); ctx.stroke();
+        
+        ctx.beginPath();
+        ctx.moveTo(13, -4); ctx.lineTo(22, -11); ctx.lineTo(15, -2); ctx.closePath();
+        ctx.fill(); ctx.stroke();
+
+        // One short nose horn
+        ctx.beginPath();
+        ctx.moveTo(22, 4); ctx.lineTo(27, 2); ctx.lineTo(22, 7); ctx.closePath();
+        ctx.fill(); ctx.stroke();
+
+        // Front legs
+        ctx.fillStyle = bodyColor;
+        ctx.beginPath();
+        ctx.roundRect(-4 + legSwing, 15, 8, 10, 3);
+        ctx.fill(); ctx.stroke();
+        ctx.beginPath();
+        ctx.roundRect(14 + legSwing, 15, 8, 10, 3);
+        ctx.fill(); ctx.stroke();
+
+        this.restoreTransform(ctx);
+    },
+
+    // Ankylosaurus (망치 꼬리 방패 공룡 - 정면 공격 면역)
+    drawAnkylosaurus(ctx, x, y, width, height, tick, isDamaged = false, direction = -1) {
+        this.setupTransform(ctx, x, y, width, height, direction);
+
+        if (isDamaged) {
+            ctx.shadowColor = 'red';
+            ctx.shadowBlur = 10;
+        }
+
+        ctx.scale(width / 46, height / 36);
+
+        const armorColor = '#8c5c36'; // Thick brown dome
+        const bodyColor = '#a0704c'; // Brown body skin
+        const spikeColor = '#d9d9d9'; // Stone grey spikes
+        const strokeColor = '#3d2410';
+
+        const legSwing = Math.sin(tick * 0.15) * 4;
+
+        ctx.strokeStyle = strokeColor;
+        ctx.lineWidth = 2.5;
+
+        // Back feet
+        ctx.fillStyle = '#6d4520';
+        ctx.beginPath();
+        ctx.roundRect(-10 - legSwing, 12, 7, 8, 2);
+        ctx.fill(); ctx.stroke();
+        ctx.beginPath();
+        ctx.roundRect(8 - legSwing, 12, 7, 8, 2);
+        ctx.fill(); ctx.stroke();
+
+        // Club tail
+        ctx.fillStyle = bodyColor;
+        ctx.beginPath();
+        ctx.moveTo(-10, 2);
+        ctx.quadraticCurveTo(-22, 3, -25, 1);
+        ctx.lineTo(-12, -2);
+        ctx.closePath();
+        ctx.fill(); ctx.stroke();
+
+        // Heavy bone club at the end of tail
+        ctx.fillStyle = '#5c5c5c';
+        ctx.beginPath();
+        ctx.arc(-26, 1, 5.5, 0, Math.PI * 2);
+        ctx.fill(); ctx.stroke();
+        // Club texture line
+        ctx.beginPath();
+        ctx.moveTo(-28, 1); ctx.lineTo(-24, 1);
+        ctx.stroke();
+
+        // Main low body
+        ctx.fillStyle = bodyColor;
+        ctx.beginPath();
+        ctx.ellipse(0, 3, 16, 11, 0, 0, Math.PI * 2);
+        ctx.fill(); ctx.stroke();
+
+        // Armored Dome Shell (Ankylosaurus carapace)
+        ctx.fillStyle = armorColor;
+        ctx.beginPath();
+        ctx.ellipse(0, 1, 16, 9, 0, Math.PI, 0); // top half dome
+        ctx.closePath();
+        ctx.fill(); ctx.stroke();
+
+        // Spikes on the shell
+        ctx.fillStyle = spikeColor;
+        const spikes = [
+            {x: -12, y: -5, r: 2},
+            {x: -6, y: -8, r: 2.5},
+            {x: 0, y: -9, r: 3},
+            {x: 6, y: -8, r: 2.5},
+            {x: 12, y: -5, r: 2}
+        ];
+        spikes.forEach(s => {
+            ctx.beginPath();
+            ctx.moveTo(s.x - 2, s.y);
+            ctx.lineTo(s.x, s.y - 4);
+            ctx.lineTo(s.x + 2, s.y);
+            ctx.closePath();
+            ctx.fill(); ctx.stroke();
+        });
+
+        // Low head
+        ctx.fillStyle = bodyColor;
+        ctx.beginPath();
+        ctx.roundRect(12, 1, 10, 8, [2, 5, 2, 4]);
+        ctx.fill(); ctx.stroke();
+
+        // Eye
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(17, 4, 1.8, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#000000';
+        ctx.beginPath();
+        ctx.arc(17.5, 4, 0.7, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Front feet
+        ctx.fillStyle = bodyColor;
+        ctx.beginPath();
+        ctx.roundRect(-4 + legSwing, 12, 7, 8, 2);
+        ctx.fill(); ctx.stroke();
+        ctx.beginPath();
+        ctx.roundRect(12 + legSwing, 12, 7, 8, 2);
+        ctx.fill(); ctx.stroke();
+
+        this.restoreTransform(ctx);
+    },
+
+    // Tyrannosaurus Rex (Stage 5 / Stage 10 보스 캐릭터)
+    drawTyrannosaurus(ctx, x, y, width, height, tick, isDamaged = false, isOpenJaw = false, direction = -1) {
+        this.setupTransform(ctx, x, y, width, height, direction);
+
+        if (isDamaged) {
+            ctx.shadowColor = 'red';
+            ctx.shadowBlur = 15;
+        } else {
+            ctx.shadowColor = 'rgba(139, 0, 0, 0.3)';
+            ctx.shadowBlur = 10;
+        }
+
+        ctx.scale(width / 110, height / 100);
+
+        const bodyColor = '#8b2525'; // Dark reddish brown
+        const accentColor = '#a83232'; // Underbelly red
+        const strokeColor = '#3a0909';
+
+        const legSwing = Math.sin(tick * 0.15) * 8;
+
+        ctx.strokeStyle = strokeColor;
+        ctx.lineWidth = 3.5;
+
+        // Back massive leg
+        ctx.fillStyle = '#5c1313';
+        ctx.beginPath();
+        ctx.ellipse(-15 - legSwing/2, 28, 12, 22, Math.PI/12, 0, Math.PI*2);
+        ctx.fill(); ctx.stroke();
+        // foot
+        ctx.beginPath();
+        ctx.roundRect(-24 - legSwing/2, 45, 18, 10, [4, 4, 2, 2]);
+        ctx.fill(); ctx.stroke();
+
+        // Tail (Thick, massive)
+        ctx.fillStyle = bodyColor;
+        ctx.beginPath();
+        ctx.moveTo(-25, 8);
+        ctx.quadraticCurveTo(-75, 15, -80, -5);
+        ctx.quadraticCurveTo(-55, -20, -20, -12);
+        ctx.closePath();
+        ctx.fill(); ctx.stroke();
+
+        // Large body
+        ctx.fillStyle = bodyColor;
+        ctx.beginPath();
+        ctx.ellipse(-10, -2, 34, 26, Math.PI/12, 0, Math.PI*2);
+        ctx.fill(); ctx.stroke();
+
+        // Orange stripes on back
+        ctx.fillStyle = '#e76f51';
+        ctx.beginPath();
+        ctx.moveTo(-35, -15); ctx.lineTo(-28, -25); ctx.lineTo(-24, -13);
+        ctx.moveTo(-20, -18); ctx.lineTo(-12, -26); ctx.lineTo(-8, -15);
+        ctx.moveTo(-2, -18); ctx.lineTo(6, -24); ctx.lineTo(10, -14);
+        ctx.closePath();
+        ctx.fill();
+
+        // Re-stroke body outline to hide stripes overlapping edges
+        ctx.beginPath();
+        ctx.ellipse(-10, -2, 34, 26, Math.PI/12, 0, Math.PI*2);
+        ctx.stroke();
+
+        // Underbelly
+        ctx.fillStyle = accentColor;
+        ctx.beginPath();
+        ctx.ellipse(-2, 10, 24, 12, Math.PI/8, 0, Math.PI*2);
+        ctx.fill(); ctx.stroke();
+
+        // Big Head (Very large jaw)
+        // Draw head base
+        ctx.fillStyle = bodyColor;
+        
+        if (isOpenJaw) {
+            // Draw upper jaw
+            ctx.save();
+            ctx.translate(14, -25);
+            ctx.rotate(-Math.PI / 10);
+            ctx.beginPath();
+            ctx.roundRect(0, -18, 42, 20, [10, 10, 4, 4]);
+            ctx.fill(); ctx.stroke();
+            
+            // Eye (glow yellow)
+            ctx.fillStyle = '#ffb703';
+            ctx.beginPath();
+            ctx.arc(14, -8, 5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#000';
+            ctx.beginPath();
+            ctx.arc(13.5, -8, 2, 0, Math.PI*2);
+            ctx.fill();
+
+            // Upper teeth
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            for (let tx = 8; tx < 38; tx += 6) {
+                ctx.moveTo(tx, 2); ctx.lineTo(tx + 3, -3); ctx.lineTo(tx + 6, 2);
+            }
+            ctx.fill();
+            ctx.restore();
+
+            // Draw lower jaw (open)
+            ctx.save();
+            ctx.translate(14, -14);
+            ctx.rotate(Math.PI / 6);
+            ctx.beginPath();
+            ctx.roundRect(0, 0, 36, 12, [2, 2, 8, 8]);
+            ctx.fill(); ctx.stroke();
+            // Lower teeth
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            for (let tx = 6; tx < 32; tx += 6) {
+                ctx.moveTo(tx, 0); ctx.lineTo(tx + 3, 5); ctx.lineTo(tx + 6, 0);
+            }
+            ctx.fill();
+            ctx.restore();
+
+            // Throat (Dark red gap)
+            ctx.fillStyle = '#4a0b0b';
+            ctx.beginPath();
+            ctx.moveTo(14, -28);
+            ctx.lineTo(24, -20);
+            ctx.lineTo(16, 2);
+            ctx.closePath();
+            ctx.fill();
+
+        } else {
+            // Closed jaw head
+            ctx.save();
+            ctx.translate(14, -22);
+            ctx.beginPath();
+            ctx.roundRect(0, -18, 42, 28, [10, 10, 8, 8]);
+            ctx.fill(); ctx.stroke();
+
+            // Jaw shut line
+            ctx.beginPath();
+            ctx.moveTo(12, 2);
+            ctx.lineTo(40, 2);
+            ctx.stroke();
+
+            // Teeth peaking out
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.moveTo(18, 2); ctx.lineTo(20, -1); ctx.lineTo(22, 2);
+            ctx.moveTo(28, 2); ctx.lineTo(30, -1); ctx.lineTo(32, 2);
+            ctx.fill();
+
+            // Eye (glow yellow)
+            ctx.fillStyle = '#ffb703';
+            ctx.beginPath();
+            ctx.arc(14, -8, 5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#000';
+            ctx.beginPath();
+            ctx.arc(13.5, -8, 2, 0, Math.PI*2);
+            ctx.fill();
+            ctx.restore();
+        }
+
+        // Tiny T-rex claws (moving slightly with tick)
+        const clawWiggle = Math.sin(tick * 0.3) * 4;
+        ctx.fillStyle = bodyColor;
+        ctx.save();
+        ctx.translate(18, -4);
+        ctx.rotate(Math.PI/6 + clawWiggle * 0.05);
+        ctx.beginPath();
+        ctx.ellipse(0, 0, 7, 3, 0, 0, Math.PI*2);
+        ctx.fill(); ctx.stroke();
+        // fingers
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.moveTo(6, -1); ctx.lineTo(10, -2); ctx.lineTo(7, 1);
+        ctx.moveTo(6, 1); ctx.lineTo(9, 3); ctx.lineTo(5, 2);
+        ctx.fill();
+        ctx.restore();
+
+        // Front massive leg (closest to camera)
+        ctx.fillStyle = bodyColor;
+        ctx.beginPath();
+        ctx.ellipse(-8 + legSwing/2, 26, 13, 23, -Math.PI/12, 0, Math.PI*2);
+        ctx.fill(); ctx.stroke();
+        // foot
+        ctx.beginPath();
+        ctx.roundRect(-16 + legSwing/2, 45, 19, 10, [4, 4, 2, 2]);
+        ctx.fill(); ctx.stroke();
+
+        this.restoreTransform(ctx);
+    },
+
     // Flying Pterodactyl Enemy (빨간 익룡)
-    drawPterodactyl(ctx, x, y, width, height, tick) {
-        this.setupTransform(ctx, x, y, width, height, -1);
+    drawPterodactyl(ctx, x, y, width, height, tick, direction = -1) {
+        this.setupTransform(ctx, x, y, width, height, direction);
 
         const wingFlap = Math.sin(tick * 0.25) * 12;
 
