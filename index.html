@@ -30,7 +30,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Outfit:wght@300;400;700;900&family=Press+Start+2P&display=swap" rel="stylesheet">
     
-    <link rel="stylesheet" href="style.css?v=1.5">
+    <link rel="stylesheet" href="style.css?v=1.6">
     
     <!-- PWA Settings -->
     <link rel="manifest" href="manifest.json">
@@ -265,6 +265,9 @@
                     <!-- Android / Chrome Desktop Install -->
                     <div id="pwa-android-install" class="pwa-install-section hidden">
                         <button id="btn-pwa-install-action" class="btn btn-primary btn-lg">🏅 Install Now</button>
+                        <div id="samsung-browser-tip" class="samsung-tip hidden" style="margin-top: 15px; font-size: 0.85rem; color: #ffd166; line-height: 1.4; background: rgba(255, 209, 102, 0.1); border: 1.5px dashed rgba(255, 209, 102, 0.3); padding: 12px; border-radius: 10px; text-align: left; font-family: var(--font-sans);">
+                            ⚠️ <strong>Samsung Internet Tip:</strong> If clicking "Install Now" shows a "Cannot install" (설치할 수 없음) message, copy this URL and open it in <strong>Google Chrome</strong> to install the game successfully.
+                        </div>
                     </div>
                     
                     <!-- iOS Safari Install Guide -->
@@ -447,6 +450,6 @@
     <!-- Scripts -->
     <script src="audio.js?v=1.2"></script>
     <script src="sprites.js?v=1.2"></script>
-    <script src="game.js?v=1.4"></script>
+    <script src="game.js?v=1.5"></script>
 </body>
 </html>

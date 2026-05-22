@@ -1,9 +1,9 @@
-const CACHE_NAME = 'caveman-adventure-v1.5';
+const CACHE_NAME = 'caveman-adventure-v1.6';
 const ASSETS = [
   './',
   './index.html',
-  './style.css?v=1.5',
-  './game.js?v=1.4',
+  './style.css?v=1.6',
+  './game.js?v=1.5',
   './sprites.js?v=1.2',
   './audio.js?v=1.2',
   './manifest.json',

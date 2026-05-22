@@ -468,26 +468,39 @@ class Game {
         const userAgent = navigator.userAgent || navigator.vendor || window.opera;
         const isIOS = /iPad|iPhone|iPod/.test(userAgent) && !window.MSStream;
         const isInAppBrowser = /KAKAOTALK|Instagram|FBAN|FBAV|Line|NAVER/i.test(userAgent);
+        const isSamsungBrowser = /SamsungBrowser/i.test(userAgent);
 
         const androidSection = document.getElementById('pwa-android-install');
         const iosSection = document.getElementById('pwa-ios-install');
         const inappSection = document.getElementById('pwa-inapp-install');
         const fallbackSection = document.getElementById('pwa-android-fallback');
+        const samsungTip = document.getElementById('samsung-browser-tip');
 
         // Hide all sections first
         if (androidSection) androidSection.classList.add('hidden');
         if (iosSection) iosSection.classList.add('hidden');
         if (inappSection) inappSection.classList.add('hidden');
         if (fallbackSection) fallbackSection.classList.add('hidden');
+        if (samsungTip) samsungTip.classList.add('hidden');
 
         if (isInAppBrowser) {
             if (inappSection) inappSection.classList.remove('hidden');
         } else if (this.deferredPrompt) {
-            if (androidSection) androidSection.classList.remove('hidden');
+            if (androidSection) {
+                androidSection.classList.remove('hidden');
+                if (isSamsungBrowser && samsungTip) {
+                    samsungTip.classList.remove('hidden');
+                }
+            }
         } else if (isIOS) {
             if (iosSection) iosSection.classList.remove('hidden');
         } else {
-            if (fallbackSection) fallbackSection.classList.remove('hidden');
+            if (fallbackSection) {
+                fallbackSection.classList.remove('hidden');
+                if (isSamsungBrowser && samsungTip) {
+                    samsungTip.classList.remove('hidden');
+                }
+            }
         }
     }
 
