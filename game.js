@@ -271,15 +271,18 @@ class Game {
         // PWA Android Install Prompt Action
         const btnPwaInstallAction = document.getElementById('btn-pwa-install-action');
         if (btnPwaInstallAction) {
-            btnPwaInstallAction.addEventListener('click', async () => {
+            btnPwaInstallAction.addEventListener('click', () => {
                 const modal = document.getElementById('pwa-install-modal');
                 if (this.deferredPrompt) {
                     this.deferredPrompt.prompt();
-                    const { outcome } = await this.deferredPrompt.userChoice;
-                    console.log(`User prompt choice: ${outcome}`);
-                    this.deferredPrompt = null;
-                    const btnPwaInstall = document.getElementById('btn-pwa-install');
-                    if (btnPwaInstall) btnPwaInstall.classList.add('hidden');
+                    this.deferredPrompt.userChoice.then((choiceResult) => {
+                        console.log(`User prompt choice: ${choiceResult.outcome}`);
+                        this.deferredPrompt = null;
+                        const btnPwaInstall = document.getElementById('btn-pwa-install');
+                        if (btnPwaInstall) btnPwaInstall.classList.add('hidden');
+                    }).catch((err) => {
+                        console.error('Error during PWA choice prompt:', err);
+                    });
                 }
                 if (modal) modal.classList.add('hidden');
             });
@@ -462,19 +465,29 @@ class Game {
 
         modal.classList.remove('hidden');
 
-        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+        const isIOS = /iPad|iPhone|iPod/.test(userAgent) && !window.MSStream;
+        const isInAppBrowser = /KAKAOTALK|Instagram|FBAN|FBAV|Line|NAVER/i.test(userAgent);
+
         const androidSection = document.getElementById('pwa-android-install');
         const iosSection = document.getElementById('pwa-ios-install');
+        const inappSection = document.getElementById('pwa-inapp-install');
+        const fallbackSection = document.getElementById('pwa-android-fallback');
 
-        if (this.deferredPrompt) {
+        // Hide all sections first
+        if (androidSection) androidSection.classList.add('hidden');
+        if (iosSection) iosSection.classList.add('hidden');
+        if (inappSection) inappSection.classList.add('hidden');
+        if (fallbackSection) fallbackSection.classList.add('hidden');
+
+        if (isInAppBrowser) {
+            if (inappSection) inappSection.classList.remove('hidden');
+        } else if (this.deferredPrompt) {
             if (androidSection) androidSection.classList.remove('hidden');
-            if (iosSection) iosSection.classList.add('hidden');
         } else if (isIOS) {
-            if (androidSection) androidSection.classList.add('hidden');
             if (iosSection) iosSection.classList.remove('hidden');
         } else {
-            if (androidSection) androidSection.classList.remove('hidden');
-            if (iosSection) iosSection.classList.add('hidden');
+            if (fallbackSection) fallbackSection.classList.remove('hidden');
         }
     }
 

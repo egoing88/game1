@@ -30,7 +30,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Outfit:wght@300;400;700;900&family=Press+Start+2P&display=swap" rel="stylesheet">
     
-    <link rel="stylesheet" href="style.css?v=1.4">
+    <link rel="stylesheet" href="style.css?v=1.5">
     
     <!-- PWA Settings -->
     <link rel="manifest" href="manifest.json">
@@ -285,6 +285,38 @@
                         </div>
                     </div>
 
+                    <!-- In-App Browser Guide -->
+                    <div id="pwa-inapp-install" class="pwa-install-section hidden">
+                        <div class="ios-instructions">
+                            <div class="ios-step">
+                                <span class="step-num">1</span>
+                                <p>Tap the <strong>Menu</strong> icon (three dots <span class="share-icon">⋮</span> or browser icon) at the top/bottom.</p>
+                            </div>
+                            <div class="ios-step">
+                                <span class="step-num">2</span>
+                                <p>Select <strong>"Open in Browser"</strong> or <strong>"Open in Safari/Chrome"</strong>.</p>
+                            </div>
+                            <div class="ios-step">
+                                <span class="step-num">3</span>
+                                <p>Once opened in default browser, tap <strong>Install App</strong> again.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Android Fallback Guide -->
+                    <div id="pwa-android-fallback" class="pwa-install-section hidden">
+                        <div class="ios-instructions">
+                            <div class="ios-step">
+                                <span class="step-num">1</span>
+                                <p>Tap the browser's <strong>Menu</strong> button (three dots <span class="share-icon">⋮</span> or <span class="share-icon">☰</span>).</p>
+                            </div>
+                            <div class="ios-step">
+                                <span class="step-num">2</span>
+                                <p>Select <strong>"Add to Home screen"</strong> or <strong>"Install app"</strong>.</p>
+                            </div>
+                        </div>
+                    </div>
+
                     <button id="btn-pwa-close" class="btn btn-leaderboard" style="margin-top: 15px;">Close</button>
                 </div>
             </div>
@@ -415,6 +447,6 @@
     <!-- Scripts -->
     <script src="audio.js?v=1.2"></script>
     <script src="sprites.js?v=1.2"></script>
-    <script src="game.js?v=1.3"></script>
+    <script src="game.js?v=1.4"></script>
 </body>
 </html>
