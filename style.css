@@ -606,6 +606,7 @@ body {
         height: 100dvh;
         overflow: hidden;
         position: fixed; /* Lock body scrolling & bounce on mobile browser Chrome/Safari */
+        overscroll-behavior: none;
     }
     
     .game-container {
@@ -617,8 +618,10 @@ body {
         margin: 0;
         justify-content: center;
         align-items: center;
-        position: relative;
+        position: fixed; /* Fixed is much safer for dynamic viewports than relative */
+        inset: 0;
         overflow: hidden;
+        overscroll-behavior: none;
     }
 
     /* Hide header and footer in mobile play mode */
@@ -837,6 +840,19 @@ body {
         padding: 20px;
         border-radius: 16px;
         max-width: 440px;
+        max-height: 92vh;
+        max-height: 92dvh;
+        overflow-y: auto;
+    }
+    .screen-content::-webkit-scrollbar {
+        width: 6px;
+    }
+    .screen-content::-webkit-scrollbar-track {
+        background: rgba(0, 0, 0, 0.2);
+    }
+    .screen-content::-webkit-scrollbar-thumb {
+        background: rgba(255, 209, 102, 0.3);
+        border-radius: 3px;
     }
     
     .game-title {
@@ -1448,5 +1464,204 @@ body {
 @media (max-width: 900px) {
     .about-section {
         display: none !important;
+    }
+}
+
+/* ==================================================
+   LOW-HEIGHT LANDSCAPE VIEWPORT OPTIMIZATIONS
+   ================================================== */
+@media (max-width: 900px) and (max-height: 480px) {
+    /* Hide decorative/explanatory elements */
+    .character-preview, .caveman-avatar {
+        display: none !important;
+    }
+    
+    #screen-start .game-subtitle, 
+    #screen-rank-register .screen-desc, 
+    #screen-leaderboard .screen-desc,
+    #pwa-install-modal .screen-desc {
+        display: none !important;
+    }
+    
+    /* Layout compacting for overlays */
+    .screen-content {
+        padding: 12px 20px !important;
+        border-radius: 12px !important;
+    }
+    
+    .game-title {
+        font-size: 1.6rem !important;
+        margin-bottom: 5px !important;
+    }
+    
+    /* 2x2 Start Screen Button grid */
+    .start-buttons-group {
+        flex-direction: row !important;
+        flex-wrap: wrap !important;
+        justify-content: center !important;
+        gap: 8px !important;
+        max-width: 480px !important;
+        margin-top: 10px !important;
+    }
+    
+    .start-buttons-group .btn {
+        flex: 1 1 45% !important;
+        font-size: 0.8rem !important;
+        padding: 8px 12px !important;
+    }
+    
+    .start-buttons-group .btn-lg {
+        font-size: 0.8rem !important;
+        padding: 8px 12px !important;
+    }
+    
+    /* Horizontal Rank Summary */
+    .rank-summary {
+        flex-direction: row !important;
+        flex-wrap: wrap !important;
+        gap: 12px !important;
+        justify-content: center !important;
+        padding: 8px 12px !important;
+        margin-bottom: 10px !important;
+        border-radius: 10px !important;
+    }
+    
+    .rank-stat {
+        flex: 1 1 auto !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        gap: 2px !important;
+        font-size: 0.8rem !important;
+    }
+    
+    /* Horizontal Rank Form */
+    .rank-form {
+        flex-direction: row !important;
+        gap: 8px !important;
+        margin-bottom: 10px !important;
+    }
+    
+    .rank-input-group {
+        flex: 1 1 50% !important;
+        gap: 2px !important;
+    }
+    
+    .rank-input-group label {
+        font-size: 0.7rem !important;
+    }
+    
+    .rank-input-group input, 
+    .rank-input-group select {
+        padding: 6px 10px !important;
+        font-size: 0.85rem !important;
+        border-radius: 8px !important;
+    }
+    
+    #btn-submit-rank {
+        font-size: 0.9rem !important;
+        padding: 10px 20px !important;
+        border-radius: 10px !important;
+    }
+    
+    /* Leaderboard reduction */
+    .leaderboard-table-wrapper {
+        max-height: 110px !important;
+        margin-bottom: 10px !important;
+    }
+    
+    .leaderboard-table thead th {
+        font-size: 0.45rem !important;
+        padding: 6px 4px !important;
+    }
+    
+    .leaderboard-table td {
+        font-size: 0.7rem !important;
+        padding: 6px 4px !important;
+    }
+}
+
+/* ==================================================
+   PWA APP INSTALLATION MODAL STYLES
+   ================================================== */
+.pwa-modal-content {
+    max-width: 440px;
+    width: 90%;
+}
+
+.ios-instructions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    text-align: left;
+    margin: 15px 0;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 14px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.ios-step {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.step-num {
+    background: var(--victory);
+    color: #1a1230;
+    font-weight: 900;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    flex-shrink: 0;
+    font-family: var(--font-mono);
+}
+
+.ios-step p {
+    font-size: 0.8rem;
+    color: var(--text-main);
+    line-height: 1.4;
+    margin: 0;
+}
+
+.ios-step strong {
+    color: var(--victory);
+}
+
+.share-icon, .plus-icon {
+    font-size: 1rem;
+    margin-left: 4px;
+    vertical-align: middle;
+}
+
+@media (max-width: 900px) and (max-height: 480px) {
+    .ios-instructions {
+        flex-direction: row !important;
+        gap: 8px !important;
+        padding: 8px !important;
+        margin: 10px 0 !important;
+    }
+    
+    .ios-step {
+        flex-direction: column !important;
+        align-items: center !important;
+        text-align: center !important;
+        flex: 1 !important;
+        gap: 4px !important;
+    }
+    
+    .ios-step p {
+        font-size: 0.65rem !important;
+        line-height: 1.2 !important;
+    }
+    
+    .step-num {
+        width: 18px !important;
+        height: 18px !important;
+        font-size: 0.65rem !important;
     }
 }

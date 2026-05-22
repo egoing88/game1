@@ -109,6 +109,8 @@ class Game {
         this.musicOn = true;
         this.soundOn = true;
 
+        this.deferredPrompt = null;
+
         this.initDOM();
         this.bindEvents();
     }
@@ -237,6 +239,57 @@ class Game {
             btnLeaderboardHome.addEventListener('click', () => {
                 this.goToHome();
             });
+        }
+
+        // PWA Install Event Handler
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            this.deferredPrompt = e;
+            const btnPwaInstall = document.getElementById('btn-pwa-install');
+            if (btnPwaInstall) {
+                btnPwaInstall.classList.remove('hidden');
+            }
+        });
+
+        // PWA Install Button Click
+        const btnPwaInstall = document.getElementById('btn-pwa-install');
+        if (btnPwaInstall) {
+            btnPwaInstall.addEventListener('click', () => {
+                this.showPwaInstallModal();
+            });
+        }
+
+        // PWA Close Modal Click
+        const btnPwaClose = document.getElementById('btn-pwa-close');
+        if (btnPwaClose) {
+            btnPwaClose.addEventListener('click', () => {
+                const modal = document.getElementById('pwa-install-modal');
+                if (modal) modal.classList.add('hidden');
+            });
+        }
+
+        // PWA Android Install Prompt Action
+        const btnPwaInstallAction = document.getElementById('btn-pwa-install-action');
+        if (btnPwaInstallAction) {
+            btnPwaInstallAction.addEventListener('click', async () => {
+                const modal = document.getElementById('pwa-install-modal');
+                if (this.deferredPrompt) {
+                    this.deferredPrompt.prompt();
+                    const { outcome } = await this.deferredPrompt.userChoice;
+                    console.log(`User prompt choice: ${outcome}`);
+                    this.deferredPrompt = null;
+                    const btnPwaInstall = document.getElementById('btn-pwa-install');
+                    if (btnPwaInstall) btnPwaInstall.classList.add('hidden');
+                }
+                if (modal) modal.classList.add('hidden');
+            });
+        }
+
+        // Check if iOS Safari (no beforeinstallprompt) to show install button immediately
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+        if (isIOS && !isStandalone) {
+            if (btnPwaInstall) btnPwaInstall.classList.remove('hidden');
         }
 
         // Fullscreen Toggle (Desktop and Mobile)
@@ -400,6 +453,28 @@ class Game {
                     console.error(`Error attempting to exit fullscreen: ${err.message}`);
                 });
             }
+        }
+    }
+
+    showPwaInstallModal() {
+        const modal = document.getElementById('pwa-install-modal');
+        if (!modal) return;
+
+        modal.classList.remove('hidden');
+
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        const androidSection = document.getElementById('pwa-android-install');
+        const iosSection = document.getElementById('pwa-ios-install');
+
+        if (this.deferredPrompt) {
+            if (androidSection) androidSection.classList.remove('hidden');
+            if (iosSection) iosSection.classList.add('hidden');
+        } else if (isIOS) {
+            if (androidSection) androidSection.classList.add('hidden');
+            if (iosSection) iosSection.classList.remove('hidden');
+        } else {
+            if (androidSection) androidSection.classList.remove('hidden');
+            if (iosSection) iosSection.classList.add('hidden');
         }
     }
 
